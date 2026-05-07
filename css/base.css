@@ -1,0 +1,271 @@
+/* ============================================================
+   base.css — Design tokens, app shell, shared components
+   iOS-native visual language (Apple Health style)
+   ============================================================ */
+
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root {
+  /* Fonts */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "SF Pro Text", "Helvetica Neue", sans-serif;
+
+  /* iOS System Colours */
+  --colour-blue:        #007AFF;
+  --colour-green:       #34C759;
+  --colour-amber:       #FF9500;
+  --colour-red:         #FF3B30;
+  --colour-purple:      #AF52DE;
+  --colour-teal:        #5AC8FA;
+
+  /* Backgrounds */
+  --bg-primary:         #FFFFFF;
+  --bg-card:            #FFFFFF;
+  --bg-modal:           #FFFFFF;
+
+  /* Labels */
+  --label-primary:      #000000;
+  --label-secondary:    #3C3C43;
+  --label-tertiary:     rgba(60, 60, 67, 0.60);
+  --label-quaternary:   rgba(60, 60, 67, 0.18);
+
+  /* Separators */
+  --separator:          rgba(60, 60, 67, 0.29);
+  --separator-opaque:   #C6C6C8;
+
+  /* Fill */
+  --fill-primary:       rgba(120, 120, 128, 0.20);
+  --fill-secondary:     rgba(120, 120, 128, 0.16);
+  --fill-tertiary:      rgba(118, 118, 128, 0.12);
+
+  /* RAG */
+  --rag-green:          #34C759;
+  --rag-amber:          #FF9500;
+  --rag-red:            #FF3B30;
+  --rag-green-bg:       rgba(52, 199, 89,  0.12);
+  --rag-amber-bg:       rgba(255, 149, 0,  0.12);
+  --rag-red-bg:         rgba(255, 59, 48,  0.12);
+
+  /* Radius */
+  --radius-sm:          8px;
+  --radius-md:          12px;
+  --radius-lg:          16px;
+  --radius-xl:          20px;
+
+  /* Spacing */
+  --space-xs:           4px;
+  --space-sm:           8px;
+  --space-md:           16px;
+  --space-lg:           24px;
+  --space-xl:           32px;
+
+  /* Shadows */
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.08),
+                        0 1px 2px rgba(0,0,0,0.04);
+  --shadow-modal:       0 -4px 32px rgba(0,0,0,0.14),
+                        0 -1px 8px  rgba(0,0,0,0.08);
+
+  /* Typography scale */
+  --text-large-title:   34px;
+  --text-title1:        28px;
+  --text-title2:        22px;
+  --text-title3:        20px;
+  --text-headline:      17px;
+  --text-body:          17px;
+  --text-callout:       16px;
+  --text-subhead:       15px;
+  --text-footnote:      13px;
+  --text-caption:       12px;
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--label-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── App Shell ──────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06),
+              0 8px 40px rgba(0,0,0,0.12),
+              0 2px 8px rgba(0,0,0,0.08);
+}
+
+#page-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  visibility: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-primary);
+}
+
+.page.active {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* ─── Page Header ────────────────────────────────────────── */
+.page-header {
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
+  background: var(--bg-primary);
+}
+
+.page-header h1 {
+  font-size: var(--text-large-title);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--label-primary);
+}
+
+.page-header .page-subtitle {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  margin-top: 2px;
+}
+
+/* ─── Cards ──────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.card-section {
+  margin: 0 var(--space-md) var(--space-md);
+}
+
+.card-section-title {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--label-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: var(--space-md) var(--space-md) var(--space-xs);
+}
+
+/* ─── List Rows ──────────────────────────────────────────── */
+.list-row {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px var(--space-md);
+  background: var(--bg-card);
+  position: relative;
+}
+
+.list-row + .list-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--space-md);
+  right: 0;
+  height: 0.5px;
+  background: var(--separator-opaque);
+}
+
+.list-row-label {
+  font-size: var(--text-body);
+  color: var(--label-primary);
+  flex: 1;
+}
+
+.list-row-value {
+  font-size: var(--text-body);
+  color: var(--label-tertiary);
+}
+
+.list-row-chevron {
+  width: 8px;
+  height: 13px;
+  margin-left: var(--space-sm);
+  opacity: 0.3;
+}
+
+/* ─── iOS Button ─────────────────────────────────────────── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font);
+  font-size: var(--text-headline);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.btn:active {
+  opacity: 0.75;
+}
+
+.btn-primary {
+  background: var(--colour-blue);
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background: var(--fill-tertiary);
+  color: var(--colour-blue);
+}
+
+.btn-destructive {
+  background: var(--fill-tertiary);
+  color: var(--colour-red);
+}
+
+/* ─── RAG Badge ──────────────────────────────────────────── */
+.rag-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100px;
+  font-weight: 600;
+}
+
+.rag-badge.green { background: var(--rag-green-bg); color: var(--rag-green); }
+.rag-badge.amber { background: var(--rag-amber-bg); color: var(--rag-amber); }
+.rag-badge.red   { background: var(--rag-red-bg);   color: var(--rag-red);   }
+
+/* ─── Section Spacer ─────────────────────────────────────── */
+.section-spacer {
+  height: var(--space-md);
+}
+
+/* ─── Page bottom padding (clears nav bar) ───────────────── */
+.page-bottom-pad {
+  height: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg));
+}

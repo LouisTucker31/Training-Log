@@ -1,0 +1,540 @@
+/* ============================================================
+   log.css — Morning check-in modal, step flow, result screen
+   ============================================================ */
+
+/* ─── Modal Backdrop ─────────────────────────────────────── */
+#log-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+#log-modal-backdrop.open {
+  pointer-events: auto;
+}
+
+/* ─── Modal Sheet ────────────────────────────────────────── */
+#log-modal {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 92%;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg-modal);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Start offscreen */
+  transform: translateY(100%);
+  transition: transform 540ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#log-modal-backdrop.open #log-modal {
+  transform: translateY(0);
+}
+
+/* ─── Modal Handle ───────────────────────────────────────── */
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--separator-opaque);
+  border-radius: 100px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+/* ─── Modal Header ───────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-md) 0;
+  flex-shrink: 0;
+}
+
+.modal-header-title {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.modal-close-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 100px;
+  background: var(--fill-tertiary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-secondary);
+  font-size: 16px;
+  transition: opacity 120ms ease;
+}
+
+.modal-close-btn:active { opacity: 0.6; }
+
+/* ─── Progress Bar ───────────────────────────────────────── */
+.modal-progress {
+  padding: var(--space-md) var(--space-md) 0;
+  flex-shrink: 0;
+}
+
+.modal-progress-track {
+  height: 4px;
+  background: var(--fill-tertiary);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.modal-progress-fill {
+  height: 100%;
+  background: var(--colour-blue);
+  border-radius: 100px;
+  transition: width 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modal-progress-label {
+  font-size: var(--text-caption);
+  color: var(--label-tertiary);
+  margin-top: var(--space-xs);
+  text-align: right;
+}
+
+/* ─── Steps Container ────────────────────────────────────── */
+.modal-steps {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-step {
+  position: absolute;
+  inset: 0;
+  padding: var(--space-lg) var(--space-md);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+
+  opacity: 0;
+  transform: translateX(40px);
+  pointer-events: none;
+  transition:
+    opacity    280ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform  280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modal-step.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.modal-step.exit {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* ─── Step Content ───────────────────────────────────────── */
+.step-question {
+  font-size: var(--text-title2);
+  font-weight: 700;
+  color: var(--label-primary);
+  margin-bottom: var(--space-xs);
+  letter-spacing: -0.3px;
+}
+
+.step-hint {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  margin-bottom: var(--space-xl);
+}
+
+/* ─── Native Number Input ────────────────────────────────── */
+.number-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.native-input {
+  width: 100%;
+  height: 44px;
+  background: var(--bg-card);
+  border: 0.5px solid var(--separator-opaque);
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: var(--text-body);
+  color: var(--label-primary);
+  padding: 0 var(--space-md);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.native-input:focus {
+  border-color: var(--colour-blue);
+  border-width: 2px;
+}
+
+.number-input-unit {
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+  padding-left: var(--space-xs);
+}
+
+/* ─── Native Select ──────────────────────────────────────── */
+.native-select-wrap {
+  width: 100%;
+}
+
+.native-select {
+  width: 100%;
+  height: 44px;
+  background: var(--bg-card);
+  border: 0.5px solid var(--separator-opaque);
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: var(--text-body);
+  color: var(--label-primary);
+  padding: 0 var(--space-md);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C6C6C8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.native-select:focus {
+  border-color: var(--colour-blue);
+  border-width: 2px;
+}
+
+/* Illness checkbox */
+.illness-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  margin-top: var(--space-xs);
+}
+
+.illness-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--separator-opaque);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.illness-checkbox.checked {
+  background: var(--colour-red);
+  border-color: var(--colour-red);
+}
+
+.illness-checkbox-icon {
+  color: white;
+  font-size: 14px;
+  display: none;
+}
+
+.illness-checkbox.checked .illness-checkbox-icon {
+  display: block;
+}
+
+.illness-label {
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--label-primary);
+}
+
+.illness-sublabel {
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+}
+
+/* ─── Slider (Joint Pain) ────────────────────────────────── */
+.slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.slider-value-display {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--label-primary);
+  text-align: center;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.slider-value-display.danger { color: var(--colour-red); }
+
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 100px;
+  background: var(--fill-secondary);
+  outline: none;
+  cursor: pointer;
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 100px;
+  background: var(--colour-blue);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.35);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.range-input.danger::-webkit-slider-thumb {
+  background: var(--colour-red);
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.35);
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+}
+
+/* ─── Next Button ────────────────────────────────────────── */
+.step-next-btn {
+  margin-top: auto;
+  padding-top: var(--space-lg);
+  padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
+  flex-shrink: 0;
+}
+
+/* ─── Summary Step ───────────────────────────────────────── */
+.summary-rows {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px var(--space-md);
+  position: relative;
+}
+
+.summary-row + .summary-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--space-md);
+  right: 0;
+  height: 0.5px;
+  background: var(--separator-opaque);
+}
+
+.summary-row-label {
+  font-size: var(--text-body);
+  color: var(--label-secondary);
+}
+
+.summary-row-value {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.summary-rag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 100px;
+  margin-left: var(--space-sm);
+  display: inline-block;
+}
+
+.summary-rag-dot.green { background: var(--rag-green); }
+.summary-rag-dot.amber { background: var(--rag-amber); }
+.summary-rag-dot.red   { background: var(--rag-red);   }
+
+/* ─── Result Screen ──────────────────────────────────────── */
+.result-score-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-md) auto var(--space-lg);
+}
+
+.result-score-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-md);
+}
+
+.result-score-circle.green { background: var(--rag-green-bg); }
+.result-score-circle.amber { background: var(--rag-amber-bg); }
+.result-score-circle.red   { background: var(--rag-red-bg);   }
+
+.result-score-number {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.result-score-circle.green .result-score-number { color: var(--rag-green); }
+.result-score-circle.amber .result-score-number { color: var(--rag-amber); }
+.result-score-circle.red   .result-score-number { color: var(--rag-red);   }
+
+.result-score-label {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.result-score-circle.green .result-score-label { color: var(--rag-green); }
+.result-score-circle.amber .result-score-label { color: var(--rag-amber); }
+.result-score-circle.red   .result-score-label { color: var(--rag-red);   }
+
+.result-volume-label {
+  font-size: var(--text-title3);
+  font-weight: 600;
+  color: var(--label-primary);
+  text-align: center;
+}
+
+.result-volume-sublabel {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: var(--space-lg);
+}
+
+/* ─── Workout Card ───────────────────────────────────────── */
+.workout-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.workout-card-header {
+  padding: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border-bottom: 0.5px solid var(--separator-opaque);
+}
+
+.workout-card-icon {
+  font-size: 22px;
+}
+
+.workout-card-title {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.workout-card-subtitle {
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+  margin-top: 1px;
+}
+
+.workout-exercise-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px var(--space-md);
+  position: relative;
+}
+
+.workout-exercise-row + .workout-exercise-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--space-md);
+  right: 0;
+  height: 0.5px;
+  background: var(--separator-opaque);
+}
+
+.workout-exercise-name {
+  font-size: var(--text-body);
+  color: var(--label-primary);
+}
+
+.workout-exercise-sets {
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  color: var(--label-tertiary);
+}
+
+/* ─── Log Page (today's result, when not in modal) ───────── */
+#page-log .log-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-xl);
+  text-align: center;
+  gap: var(--space-md);
+}
+
+#page-log .log-empty-icon {
+  font-size: 56px;
+}
+
+#page-log .log-empty-title {
+  font-size: var(--text-title3);
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+#page-log .log-empty-subtitle {
+  font-size: var(--text-body);
+  color: var(--label-tertiary);
+  line-height: 1.4;
+}
