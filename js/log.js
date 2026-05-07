@@ -358,6 +358,42 @@ const LogModal = (() => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  function buildScoreRing(score, rag) {
+    const colour    = { green: '#30D158', amber: '#FF9F0A', red: '#FF453A' }[rag] || '#30D158';
+    const colourDim = { green: 'rgba(48,209,88,0.3)', amber: 'rgba(255,159,10,0.3)', red: 'rgba(255,69,58,0.3)' }[rag];
+    const radius    = 52;
+    const cx        = 70;
+    const cy        = 70;
+    const circ      = 2 * Math.PI * radius;
+    const fill      = Math.max(0, Math.min(score / 100, 1)) * circ;
+    const id        = `grad-${rag}-${score}`;
+    return `
+      <svg width="140" height="140" viewBox="0 0 140 140"
+           style="display:block;filter:drop-shadow(0 2px 10px ${colourDim});">
+        <defs>
+          <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="${colour}" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="${colour}" stop-opacity="1"/>
+          </linearGradient>
+        </defs>
+        <circle cx="${cx}" cy="${cy}" r="${radius}"
+          fill="none"
+          stroke="#D1D1D6"
+          stroke-width="10"/>
+        <circle cx="${cx}" cy="${cy}" r="${radius}"
+          fill="none"
+          stroke="url(#${id})"
+          stroke-width="12"
+          stroke-linecap="round"
+          stroke-dasharray="${fill} ${circ}"
+          transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy + 9}" text-anchor="middle"
+          font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
+          font-size="26" font-weight="700"
+          fill="${colour}">${score}%</text>
+      </svg>`;
+  }
+
   // ─── Result Screen ────────────────────────────────────────
 
   function showResult(result) {
@@ -378,11 +414,8 @@ const LogModal = (() => {
       </div>
       <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-md)">
         <div class="result-score-ring">
-          <div class="result-score-circle ${result.rag}">
-            <div class="result-score-number">${result.score}%</div>
-            <div class="result-score-label">${result.rag.toUpperCase()}</div>
-          </div>
-          ${result.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;">Auto Red: ${result.autoRed}</div>` : ''}
+          ${buildScoreRing(result.score, result.rag)}
+          ${result.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${result.autoRed}</div>` : ''}
         </div>
 
         <div class="result-volume-label">${session.label || 'Rest Day'}</div>
@@ -483,11 +516,8 @@ const LogModal = (() => {
       </div>
       <div style="padding: 0 var(--space-md)">
         <div class="result-score-ring">
-          <div class="result-score-circle ${checkin.rag}">
-            <div class="result-score-number">${checkin.score}%</div>
-            <div class="result-score-label">${checkin.rag.toUpperCase()}</div>
-          </div>
-          ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:-8px;">Auto Red: ${checkin.autoRed}</div>` : ''}
+          ${buildScoreRing(checkin.score, checkin.rag)}
+          ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}
         </div>
         <div class="result-volume-label">${session.label || 'Rest Day'}</div>
         <div class="result-volume-sublabel">${getVolumeSublabel(session, checkin.rag)}</div>
@@ -749,10 +779,7 @@ const LogModal = (() => {
       <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-md)">
 
         <div class="result-score-ring">
-          <div class="result-score-circle ${checkin.rag}">
-            <div class="result-score-number">${checkin.score}%</div>
-            <div class="result-score-label">${checkin.rag.toUpperCase()}</div>
-          </div>
+          ${buildScoreRing(checkin.score, checkin.rag)}
           ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}
         </div>
 

@@ -121,8 +121,7 @@
   padding: var(--space-md) var(--space-md);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
+  display: block;
   padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
 
   opacity: 0;
@@ -328,9 +327,8 @@
 
 /* ─── Next Button ────────────────────────────────────────── */
 .step-next-btn {
-  margin-top: auto;
-  padding-top: var(--space-lg);
-  padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
+  margin-top: var(--space-lg);
+  padding-bottom: var(--space-md);
   flex-shrink: 0;
 }
 
@@ -342,15 +340,15 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-sm);
 }
 
 .summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 36px;
-  padding: 6px var(--space-md);
+  min-height: 32px;
+  padding: 5px var(--space-md);
   position: relative;
 }
 
