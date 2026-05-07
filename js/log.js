@@ -253,13 +253,12 @@ const LogModal = (() => {
             ${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
           </select>
         </div>
-        <div class="illness-row" id="illness-row">
+        <div class="illness-row" id="illness-row" style="margin-top:var(--space-md)">
           <div class="illness-checkbox" id="illness-checkbox">
             <span class="illness-checkbox-icon">✓</span>
           </div>
           <div>
             <div class="illness-label">Illness or Fever</div>
-            <div class="illness-sublabel">Auto-red — overrides all other scores</div>
           </div>
         </div>
         <div class="step-next-btn">
@@ -543,32 +542,33 @@ const LogModal = (() => {
     document.getElementById('log-modal-close')?.addEventListener('click', close);
 
     // Drag to dismiss
-    const modal   = document.getElementById('log-modal');
-    const handle  = modal?.querySelector('.modal-handle');
+    const modal  = document.getElementById('log-modal');
+    const handle = modal?.querySelector('.modal-handle');
     if (modal && handle) {
-      let startY     = 0;
-      let currentY   = 0;
-      let dragging   = false;
+      let startY   = 0;
+      let currentY = 0;
+      let dragging = false;
 
       handle.addEventListener('touchstart', e => {
         startY   = e.touches[0].clientY;
+        currentY = startY;
         dragging = true;
         modal.style.transition = 'none';
       }, { passive: true });
 
-      handle.addEventListener('touchmove', e => {
+      document.addEventListener('touchmove', e => {
         if (!dragging) return;
-        currentY = e.touches[0].clientY;
+        currentY    = e.touches[0].clientY;
         const delta = Math.max(0, currentY - startY);
         modal.style.transform = `translateY(${delta}px)`;
       }, { passive: true });
 
-      handle.addEventListener('touchend', () => {
+      document.addEventListener('touchend', () => {
         if (!dragging) return;
-        dragging = false;
+        dragging    = false;
         const delta = Math.max(0, currentY - startY);
         modal.style.transition = '';
-        if (delta > 120) {
+        if (delta > 100) {
           close();
         } else {
           modal.style.transform = 'translateY(0)';
