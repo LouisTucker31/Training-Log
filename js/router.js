@@ -17,21 +17,28 @@ const Router = (() => {
     return currentPage;
   }
 
+  function closeModalIfOpen() {
+    const backdrop = document.getElementById('log-modal-backdrop');
+    if (backdrop) {
+      // Bypass NavBar.setActiveByTarget inside close() by removing backdrop directly
+      const modal = document.getElementById('log-modal');
+      if (modal) modal.style.transform = '';
+      backdrop.classList.remove('open');
+      setTimeout(() => backdrop.remove(), 400);
+    }
+  }
+
   function init() {
     document.addEventListener('nav:change', e => {
       const target = e.detail.target;
 
-      if (target === 'training') {
-        showPage('training');
-        return;
-      }
-
       if (target === 'log') {
-        // Don't switch page — open modal over current page
+        if (document.getElementById('log-modal-backdrop')) return;
         LogModal.open();
         return;
       }
 
+      closeModalIfOpen();
       showPage(target);
     });
 
