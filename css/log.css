@@ -118,11 +118,12 @@
 .modal-step {
   position: absolute;
   inset: 0;
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-md) var(--space-md);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
+  padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
 
   opacity: 0;
   transform: translateX(40px);
@@ -145,7 +146,7 @@
 
 /* ─── Step Content ───────────────────────────────────────── */
 .step-question {
-  font-size: var(--text-title2);
+  font-size: var(--text-title3);
   font-weight: 700;
   color: var(--label-primary);
   margin-bottom: var(--space-xs);
@@ -153,9 +154,9 @@
 }
 
 .step-hint {
-  font-size: var(--text-subhead);
+  font-size: var(--text-footnote);
   color: var(--label-tertiary);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 /* ─── Native Number Input ────────────────────────────────── */
@@ -348,8 +349,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
-  padding: 10px var(--space-md);
+  min-height: 36px;
+  padding: 6px var(--space-md);
   position: relative;
 }
 
@@ -364,12 +365,12 @@
 }
 
 .summary-row-label {
-  font-size: var(--text-body);
+  font-size: var(--text-subhead);
   color: var(--label-secondary);
 }
 
 .summary-row-value {
-  font-size: var(--text-body);
+  font-size: var(--text-subhead);
   font-weight: 600;
   color: var(--label-primary);
 }
@@ -392,18 +393,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: var(--space-md) auto var(--space-lg);
+  margin: var(--space-sm) auto var(--space-sm);
 }
 
 .result-score-circle {
-  width: 140px;
-  height: 140px;
+  width: 90px;
+  height: 90px;
   border-radius: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-sm);
 }
 
 .result-score-circle.green { background: var(--rag-green-bg); }
@@ -411,9 +412,9 @@
 .result-score-circle.red   { background: var(--rag-red-bg);   }
 
 .result-score-number {
-  font-size: 48px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
 
