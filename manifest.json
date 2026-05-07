@@ -2,10 +2,11 @@
   "name": "Training Log",
   "short_name": "Training",
   "description": "Daily training log with recovery tracking",
-  "start_url": "/training-log/",
+  "start_url": "/Training-Log/",
+  "scope": "/Training-Log/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F2F2F7",
+  "background_color": "#FFFFFF",
   "theme_color": "#007AFF",
   "icons": [
     {

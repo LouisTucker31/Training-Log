@@ -1,28 +1,27 @@
-const CACHE_NAME = 'training-log-v1';
+const CACHE_NAME = 'training-log-v2';
 
 const STATIC_ASSETS = [
-  '/training-log/',
-  '/training-log/index.html',
-  '/manifest.json',
-  '/css/navbar.css',
-  '/css/base.css',
-  '/css/home.css',
-  '/css/log.css',
-  '/css/training.css',
-  '/css/insights.css',
-  '/css/profile.css',
-  '/js/navbar.js',
-  '/js/router.js',
-  '/js/data.js',
-  '/js/store.js',
-  '/js/home.js',
-  '/js/log.js',
-  '/js/training.js',
-  '/js/insights.js',
-  '/js/profile.js'
+  '/Training-Log/',
+  '/Training-Log/index.html',
+  '/Training-Log/manifest.json',
+  '/Training-Log/css/navbar.css',
+  '/Training-Log/css/base.css',
+  '/Training-Log/css/home.css',
+  '/Training-Log/css/log.css',
+  '/Training-Log/css/training.css',
+  '/Training-Log/css/insights.css',
+  '/Training-Log/css/profile.css',
+  '/Training-Log/js/navbar.js',
+  '/Training-Log/js/router.js',
+  '/Training-Log/js/data.js',
+  '/Training-Log/js/store.js',
+  '/Training-Log/js/home.js',
+  '/Training-Log/js/log.js',
+  '/Training-Log/js/training.js',
+  '/Training-Log/js/insights.js',
+  '/Training-Log/js/profile.js'
 ];
 
-// Install — cache all static assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -31,7 +30,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate — delete old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -44,7 +42,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch — cache first, network fallback
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
