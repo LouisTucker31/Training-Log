@@ -1,8 +1,8 @@
 const CACHE_NAME = 'training-log-v1';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
+  '/training-log/',
+  '/training-log/index.html',
   '/manifest.json',
   '/css/navbar.css',
   '/css/base.css',
