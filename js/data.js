@@ -80,26 +80,28 @@ const TrainingData = (() => {
 
   // ─── Get week info ────────────────────────────────────────
 
+  function parseLocalDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
   function getWeekNumber(programmeStart) {
     if (!programmeStart) return null;
-    const start   = new Date(programmeStart);
-    const today   = new Date();
-    start.setHours(0, 0, 0, 0);
+    const start    = parseLocalDate(programmeStart);
+    const today    = new Date();
     today.setHours(0, 0, 0, 0);
-    const diffMs  = today - start;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const week    = Math.floor(diffDays / 7) + 1;
+    const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+    const week     = Math.floor(diffDays / 7) + 1;
     return week > 0 && week <= 18 ? week : null;
   }
 
   function getDayOfWeek(programmeStart) {
     if (!programmeStart) return null;
-    const start    = new Date(programmeStart);
+    const start    = parseLocalDate(programmeStart);
     const today    = new Date();
-    start.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-    return (diffDays % 7) + 1; // 1-7
+    return (diffDays % 7) + 1;
   }
 
   // ─── Get today's session ──────────────────────────────────
@@ -188,10 +190,8 @@ const TrainingData = (() => {
 
   function getSessionForDate(dateStr, programmeStart, ragScore) {
     if (!programmeStart) return { type: 'none' };
-    const start    = new Date(programmeStart);
-    const target   = new Date(dateStr);
-    start.setHours(0, 0, 0, 0);
-    target.setHours(0, 0, 0, 0);
+    const start    = parseLocalDate(programmeStart);
+    const target   = parseLocalDate(dateStr);
     const diffDays = Math.floor((target - start) / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return { type: 'none' };
     const week = Math.floor(diffDays / 7) + 1;

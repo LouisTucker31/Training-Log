@@ -1,0 +1,300 @@
+/* ============================================================
+   training.css — Training accordion week view
+   ============================================================ */
+
+.training-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.training-header {
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
+  flex-shrink: 0;
+}
+
+.training-header h1 {
+  font-size: var(--text-large-title);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.training-header-sub {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  margin-top: 2px;
+}
+
+/* ─── Week Nav ───────────────────────────────────────────── */
+.week-nav-wrap {
+  padding: 0 var(--space-md) var(--space-md);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.week-nav-label {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.week-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 100px;
+  background: var(--fill-tertiary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--colour-blue);
+  transition: opacity 120ms ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.week-nav-btn:active  { opacity: 0.6; }
+.week-nav-btn:disabled { opacity: 0.25; cursor: default; }
+
+/* ─── Accordion List ─────────────────────────────────────── */
+.accordion-list {
+  padding: 0 var(--space-md);
+  padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── Accordion Item ─────────────────────────────────────── */
+.acc-item {
+  background: #F9F9F9;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.acc-item.is-today {
+  box-shadow: var(--shadow-card), 0 0 0 1.5px var(--colour-blue);
+}
+
+.acc-item.is-completed {
+  opacity: 0.6;
+}
+
+/* ─── Accordion Header (tap target) ─────────────────────── */
+.acc-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 12px var(--space-md);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  min-height: 64px;
+}
+
+.acc-day-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 36px;
+  flex-shrink: 0;
+}
+
+.acc-day-name {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--label-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.acc-day-num {
+  font-size: var(--text-title3);
+  font-weight: 700;
+  color: var(--label-primary);
+  line-height: 1.1;
+}
+
+.acc-item.is-today .acc-day-num {
+  color: var(--colour-blue);
+}
+
+.acc-icon {
+  display: none;
+}
+
+.acc-session-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-session-title {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  color: var(--label-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acc-session-sub {
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+  margin-top: 1px;
+}
+
+.acc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.acc-complete-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 100px;
+  background: var(--rag-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: white;
+  font-weight: 700;
+}
+
+.acc-chevron {
+  font-size: 12px;
+  color: var(--label-quaternary);
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.acc-item.is-open .acc-chevron {
+  transform: rotate(90deg);
+}
+
+/* ─── Accordion Body ─────────────────────────────────────── */
+.acc-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 380ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.acc-item.is-open .acc-body {
+  max-height: 600px;
+}
+
+.acc-body-inner {
+  padding: var(--space-sm) var(--space-md) var(--space-sm);
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+
+/* ─── Volume Badge ───────────────────────────────────────── */
+.volume-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+.volume-badge.green { background: var(--fill-tertiary); color: var(--label-tertiary); }
+.volume-badge.amber { background: var(--fill-tertiary); color: var(--label-tertiary); }
+.volume-badge.red   { background: var(--fill-tertiary); color: var(--label-tertiary); }
+.volume-badge.tbd   { background: var(--fill-tertiary); color: var(--label-tertiary); }
+
+/* ─── Exercise List ──────────────────────────────────────── */
+.exercise-card {
+  background: transparent;
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.exercise-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  padding: 6px 0;
+  position: relative;
+}
+
+.exercise-row + .exercise-row {
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+
+.exercise-name {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+}
+
+.exercise-sets {
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--label-tertiary);
+}
+
+/* ─── Complete Tick ──────────────────────────────────────── */
+.acc-tick {
+  width: 26px;
+  height: 26px;
+  border-radius: 100px;
+  border: 2px solid var(--separator-opaque);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.acc-tick.ticked {
+  background: var(--rag-green);
+  border-color: var(--rag-green);
+}
+
+.acc-tick-check {
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  display: none;
+}
+
+.acc-tick.ticked .acc-tick-check {
+  display: block;
+}
+
+/* ─── Rest / No programme ────────────────────────────────── */
+.rest-body {
+  padding: var(--space-md);
+  text-align: center;
+  color: var(--label-tertiary);
+  font-size: var(--text-subhead);
+}
+
+.no-programme-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-xl) var(--space-md);
+  text-align: center;
+  margin: var(--space-md);
+}
+
+.no-programme-icon  { font-size: 40px; margin-bottom: var(--space-sm); }
+.no-programme-title { font-size: var(--text-title3); font-weight: 600; color: var(--label-primary); margin-bottom: var(--space-xs); }
+.no-programme-sub   { font-size: var(--text-subhead); color: var(--label-tertiary); line-height: 1.5; }

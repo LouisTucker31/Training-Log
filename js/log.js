@@ -559,7 +559,10 @@ const LogModal = (() => {
       document.addEventListener('touchmove', e => {
         if (!dragging) return;
         currentY    = e.touches[0].clientY;
-        const delta = Math.max(0, currentY - startY);
+        const raw   = currentY - startY;
+        const delta = raw < 0
+          ? Math.max(-30, raw * 0.15)
+          : Math.min(120, raw * 0.6);
         modal.style.transform = `translateY(${delta}px)`;
       }, { passive: true });
 
