@@ -4,10 +4,11 @@
 
 /* ─── Modal Backdrop ─────────────────────────────────────── */
 #log-modal-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 200;
   pointer-events: none;
+  background: rgba(0,0,0,0.3);
 }
 
 #log-modal-backdrop.open {
@@ -16,7 +17,7 @@
 
 /* ─── Modal Sheet ────────────────────────────────────────── */
 #log-modal {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
@@ -542,18 +543,18 @@
 
 /* ─── Session Modal ──────────────────────────────────────── */
 #session-modal-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 200;
   pointer-events: none;
+  background: rgba(0,0,0,0.3);
 }
-
 #session-modal-backdrop.open {
   pointer-events: auto;
 }
 
 #session-modal {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;

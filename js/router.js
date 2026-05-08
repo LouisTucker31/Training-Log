@@ -38,6 +38,13 @@ const Router = (() => {
         return;
       }
 
+      // If already on this page, scroll to top
+      if (target === currentPage) {
+        const page = document.querySelector(`.page[data-page="${target}"]`);
+        if (page) page.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       closeModalIfOpen();
       showPage(target);
     });

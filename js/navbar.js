@@ -71,10 +71,15 @@ const NavBar = (() => {
     // Bind click handlers
     navItems.forEach(item => {
       item.addEventListener('click', () => {
-        setActive(item);
-
-        // Hook: fire custom event so your router can listen
         const target = item.dataset.target;
+
+        // If log modal is open and user taps log again — close it
+        if (target === 'log' && document.getElementById('log-modal-backdrop')) {
+          LogModal.close();
+          return;
+        }
+
+        setActive(item);
         document.dispatchEvent(new CustomEvent('nav:change', { detail: { target } }));
       });
     });

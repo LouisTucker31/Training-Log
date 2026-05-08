@@ -233,7 +233,7 @@ const ProfilePage = (() => {
                 id="input-start-date"
                 type="date"
                 value="${profile.programmeStart || ''}"
-                style="text-align:right;"
+                style="text-align:right;direction:rtl;"
               />
             </div>
             <div class="settings-row">

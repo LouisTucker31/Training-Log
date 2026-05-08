@@ -44,8 +44,8 @@ const LogModal = (() => {
       case 'rhr':
         return getRHRRag(value);
       case 'motivation':
-        if (value === 'high')     return 'green';
-        if (value === 'neutral')  return 'amber';
+        if (value === 'high')    return 'green';
+        if (value === 'neutral') return 'amber';
         return 'red';
       case 'energy':
         if (value >= 7) return 'green';
@@ -81,25 +81,22 @@ const LogModal = (() => {
   };
 
   function calculateScore(ans) {
-    // ─── Auto-red checks ──────────────────────────────────
-    if (ans.illness)                        return { score: 0, rag: 'red', autoRed: 'Illness/Fever' };
-    if (ans.recoveryScore < 20)             return { score: 0, rag: 'red', autoRed: 'Recovery score below 20%' };
+    if (ans.illness)            return { score: 0, rag: 'red', autoRed: 'Illness/Fever' };
+    if (ans.recoveryScore < 20) return { score: 0, rag: 'red', autoRed: 'Recovery score below 20%' };
     if (getRHRRag(ans.rhr) === 'red') {
       const profile  = Store.getProfile();
       const baseline = profile.rhrBaseline || 59.1;
-      if (ans.rhr - baseline >= 10)         return { score: 0, rag: 'red', autoRed: 'Resting HR +10 bpm above baseline' };
+      if (ans.rhr - baseline >= 10) return { score: 0, rag: 'red', autoRed: 'Resting HR +10 bpm above baseline' };
     }
-    if (ans.jointPain >= 6)                 return { score: 0, rag: 'red', autoRed: 'Joint pain ≥6' };
+    if (ans.jointPain >= 6) return { score: 0, rag: 'red', autoRed: 'Joint pain ≥6' };
 
-    // ─── Weighted score ────────────────────────────────────
     let total = 0;
     Object.keys(WEIGHTS).forEach(key => {
-      const rag   = getMetricRag(key, ans[key]);
-      total      += ragToScore(rag) * WEIGHTS[key];
+      const rag = getMetricRag(key, ans[key]);
+      total    += ragToScore(rag) * WEIGHTS[key];
     });
 
     const pct = Math.round(total * 100);
-
     let rag;
     if (pct >= 80)      rag = 'green';
     else if (pct >= 60) rag = 'amber';
@@ -119,7 +116,6 @@ const LogModal = (() => {
     if (fill) fill.style.width = `${pct}%`;
     if (lbl)  lbl.textContent  = `${currentStep + 1} of ${TOTAL_STEPS}`;
 
-    // Show/hide back button
     const backBtn = document.getElementById('modal-back-btn');
     if (backBtn) backBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
   }
@@ -187,7 +183,7 @@ const LogModal = (() => {
         <div class="step-hint">Enter your Bevel sleep score (0–100)</div>
         <div class="number-input-wrap">
           <input class="native-input" id="input-sleep" type="tel"
-                 placeholder="e.g. 82" />
+                 placeholder="e.g. 82" value="${answers.sleepScore ?? ''}" />
           <div class="number-input-unit">out of 100</div>
         </div>
         <div class="step-next-btn">
@@ -203,7 +199,7 @@ const LogModal = (() => {
         <div class="step-hint">Enter your Bevel recovery score (0–100)</div>
         <div class="number-input-wrap">
           <input class="native-input" id="input-recovery" type="tel"
-                 placeholder="e.g. 74" />
+                 placeholder="e.g. 74" value="${answers.recoveryScore ?? ''}" />
           <div class="number-input-unit">out of 100</div>
         </div>
         <div class="step-next-btn">
@@ -220,7 +216,9 @@ const LogModal = (() => {
         <div class="step-question">Resting Heart Rate</div>
         <div class="step-hint">Your baseline is ${baseline} bpm</div>
         <div class="number-input-wrap">
-          <input class="native-input" id="input-rhr" type="number" inputmode="decimal" placeholder="e.g. 58.4" />
+          <input class="native-input" id="input-rhr" type="number"
+                 inputmode="decimal" placeholder="e.g. 58.4"
+                 value="${answers.rhr ?? ''}" />
           <div class="number-input-unit">bpm</div>
         </div>
         <div class="step-next-btn">
@@ -237,9 +235,9 @@ const LogModal = (() => {
         <div class="native-select-wrap">
           <select id="input-motivation" class="native-select">
             <option value="">Select...</option>
-            <option value="high">High — ready to go</option>
-            <option value="neutral">Neutral — I'll get through it</option>
-            <option value="dreading">Dreading it</option>
+            <option value="high"     ${answers.motivation === 'high'     ? 'selected' : ''}>High — ready to go</option>
+            <option value="neutral"  ${answers.motivation === 'neutral'  ? 'selected' : ''}>Neutral — I'll get through it</option>
+            <option value="dreading" ${answers.motivation === 'dreading' ? 'selected' : ''}>Dreading it</option>
           </select>
         </div>
         <div class="step-next-btn">
@@ -247,6 +245,7 @@ const LogModal = (() => {
         </div>
       </div>`;
   }
+
   function buildStepEnergy() {
     return `
       <div class="modal-step" data-step="energy">
@@ -255,11 +254,13 @@ const LogModal = (() => {
         <div class="native-select-wrap">
           <select id="input-energy" class="native-select">
             <option value="">Select...</option>
-            ${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
+            ${Array.from({ length: 10 }, (_, i) => i + 1).map(n =>
+              `<option value="${n}" ${answers.energy === n ? 'selected' : ''}>${n}</option>`
+            ).join('')}
           </select>
         </div>
         <div class="illness-row" id="illness-row" style="margin-top:var(--space-md)">
-          <div class="illness-checkbox" id="illness-checkbox">
+          <div class="illness-checkbox ${answers.illness ? 'checked' : ''}" id="illness-checkbox">
             <span class="illness-checkbox-icon">✓</span>
           </div>
           <div>
@@ -280,9 +281,9 @@ const LogModal = (() => {
         <div class="native-select-wrap">
           <select id="input-soreness" class="native-select">
             <option value="">Select...</option>
-            <option value="mild">Mild — barely noticeable</option>
-            <option value="moderate">Moderate — present but manageable</option>
-            <option value="severe">Severe — significantly sore</option>
+            <option value="mild"     ${answers.soreness === 'mild'     ? 'selected' : ''}>Mild — barely noticeable</option>
+            <option value="moderate" ${answers.soreness === 'moderate' ? 'selected' : ''}>Moderate — present but manageable</option>
+            <option value="severe"   ${answers.soreness === 'severe'   ? 'selected' : ''}>Severe — significantly sore</option>
           </select>
         </div>
         <div class="step-next-btn">
@@ -297,9 +298,9 @@ const LogModal = (() => {
         <div class="step-question">Joint Pain</div>
         <div class="step-hint">Rate any joint pain or discomfort (≥6 is auto-red)</div>
         <div class="slider-wrap">
-          <div class="slider-value-display" id="joint-value-display">0</div>
+          <div class="slider-value-display" id="joint-value-display">${answers.jointPain ?? 0}</div>
           <input class="range-input" id="input-joint" type="range"
-                 min="0" max="10" step="1" value="0" />
+                 min="0" max="10" step="1" value="${answers.jointPain ?? 0}" />
           <div class="slider-labels">
             <span>0 — None</span>
             <span>10 — Severe</span>
@@ -318,7 +319,8 @@ const LogModal = (() => {
         <div class="step-hint">Check your answers before calculating your score</div>
         <div class="summary-rows" id="summary-rows"></div>
         <div class="step-next-btn">
-          <button class="btn btn-primary" id="btn-submit" style="min-height:56px;font-size:var(--text-title3);">Done</button>
+          <button class="btn btn-primary" id="btn-submit"
+                  style="min-height:56px;font-size:var(--text-title3);">Done</button>
         </div>
         <div class="page-bottom-pad"></div>
       </div>`;
@@ -327,16 +329,14 @@ const LogModal = (() => {
   // ─── Populate Summary ─────────────────────────────────────
 
   function populateSummary() {
-    const profile  = Store.getProfile();
-    const baseline = profile.rhrBaseline || 59.1;
     const rows = [
-      { label: 'Sleep Score',     value: `${answers.sleepScore}%`,    metric: 'sleepScore',    val: answers.sleepScore },
-      { label: 'Recovery Score',  value: `${answers.recoveryScore}%`, metric: 'recoveryScore', val: answers.recoveryScore },
-      { label: 'Resting HR',      value: `${answers.rhr} bpm`,        metric: 'rhr',           val: answers.rhr },
-      { label: 'Motivation',      value: cap(answers.motivation),     metric: 'motivation',    val: answers.motivation },
-      { label: 'Energy',          value: `${answers.energy} / 10`,    metric: 'energy',        val: answers.energy },
-      { label: 'Soreness',        value: cap(answers.soreness),       metric: 'soreness',      val: answers.soreness },
-      { label: 'Joint Pain',      value: `${answers.jointPain} / 10`, metric: 'jointPain',     val: answers.jointPain },
+      { label: 'Sleep Score',    value: `${answers.sleepScore}%`,    metric: 'sleepScore',    val: answers.sleepScore },
+      { label: 'Recovery Score', value: `${answers.recoveryScore}%`, metric: 'recoveryScore', val: answers.recoveryScore },
+      { label: 'Resting HR',     value: `${answers.rhr} bpm`,        metric: 'rhr',           val: answers.rhr },
+      { label: 'Motivation',     value: cap(answers.motivation),     metric: 'motivation',    val: answers.motivation },
+      { label: 'Energy',         value: `${answers.energy} / 10`,    metric: 'energy',        val: answers.energy },
+      { label: 'Soreness',       value: cap(answers.soreness),       metric: 'soreness',      val: answers.soreness },
+      { label: 'Joint Pain',     value: `${answers.jointPain} / 10`, metric: 'jointPain',     val: answers.jointPain },
     ];
 
     if (answers.illness) {
@@ -347,7 +347,7 @@ const LogModal = (() => {
     if (!container) return;
 
     container.innerHTML = rows.map(r => {
-      let rag = r.forceRed ? 'red' : (r.metric ? getMetricRag(r.metric, r.val) : null);
+      const rag = r.forceRed ? 'red' : (r.metric ? getMetricRag(r.metric, r.val) : null);
       const dot = rag ? `<span class="summary-rag-dot ${rag}"></span>` : '';
       return `
         <div class="summary-row">
@@ -362,79 +362,92 @@ const LogModal = (() => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // ─── Score Ring ───────────────────────────────────────────
+
   function buildScoreRing(score, rag) {
     const colour    = { green: '#30D158', amber: '#FF9F0A', red: '#FF453A' }[rag] || '#30D158';
     const colourDim = { green: 'rgba(48,209,88,0.3)', amber: 'rgba(255,159,10,0.3)', red: 'rgba(255,69,58,0.3)' }[rag];
     const radius    = 52;
-    const cx        = 70;
-    const cy        = 70;
-    const circ      = 2 * Math.PI * radius;
-    const fill      = Math.max(0, Math.min(score / 100, 1)) * circ;
-    const id        = `grad-${rag}-${score}`;
+    const cx = 70, cy = 70;
+    const circ = 2 * Math.PI * radius;
+    const fill = Math.max(0, Math.min(score / 100, 1)) * circ;
+    const id   = `grad-${rag}-${score}`;
     return `
       <svg width="140" height="140" viewBox="0 0 140 140"
            style="display:block;filter:drop-shadow(0 2px 10px ${colourDim});">
         <defs>
           <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="${colour}" stop-opacity="0.5"/>
+            <stop offset="0%"   stop-color="${colour}" stop-opacity="0.5"/>
             <stop offset="100%" stop-color="${colour}" stop-opacity="1"/>
           </linearGradient>
         </defs>
-        <circle cx="${cx}" cy="${cy}" r="${radius}"
-          fill="none"
-          stroke="#D1D1D6"
-          stroke-width="10"/>
-        <circle cx="${cx}" cy="${cy}" r="${radius}"
-          fill="none"
-          stroke="url(#${id})"
-          stroke-width="12"
-          stroke-linecap="round"
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#D1D1D6" stroke-width="10"/>
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none"
+          stroke="url(#${id})" stroke-width="12" stroke-linecap="round"
           stroke-dasharray="${fill} ${circ}"
           transform="rotate(-90 ${cx} ${cy})"/>
         <text x="${cx}" y="${cy + 9}" text-anchor="middle"
           font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
-          font-size="26" font-weight="700"
-          fill="${colour}">${score}%</text>
+          font-size="26" font-weight="700" fill="${colour}">${score}%</text>
       </svg>`;
   }
 
-  // ─── Result Screen ────────────────────────────────────────
+  // ─── Result / Overview Screen ─────────────────────────────
 
-  function showResult(result) {
-    const profile = Store.getProfile();
-    const session = TrainingData.getTodaySession(profile.programmeStart, result.rag);
-    const icon    = sessionIcon(session.type);
-
+  function showResultWithEdit(checkin) {
     const modal = document.getElementById('log-modal');
     if (!modal) return;
 
-    // Replace modal content with result
+    const rows = [
+      { label: 'Sleep Score',    value: `${checkin.sleepScore}%`,    metric: 'sleepScore',    val: checkin.sleepScore },
+      { label: 'Recovery Score', value: `${checkin.recoveryScore}%`, metric: 'recoveryScore', val: checkin.recoveryScore },
+      { label: 'Resting HR',     value: `${checkin.rhr} bpm`,        metric: 'rhr',           val: checkin.rhr },
+      { label: 'Motivation',     value: cap(checkin.motivation),     metric: 'motivation',    val: checkin.motivation },
+      { label: 'Energy',         value: `${checkin.energy} / 10`,    metric: 'energy',        val: checkin.energy },
+      { label: 'Soreness',       value: cap(checkin.soreness),       metric: 'soreness',      val: checkin.soreness },
+      { label: 'Joint Pain',     value: `${checkin.jointPain} / 10`, metric: 'jointPain',     val: checkin.jointPain },
+    ];
+
+    if (checkin.illness) {
+      rows.push({ label: 'Illness/Fever', value: 'Yes — Auto Red', metric: null, val: null, forceRed: true });
+    }
+
+    const summaryHTML = rows.map(r => {
+      const rag = r.forceRed ? 'red' : (r.metric ? getMetricRag(r.metric, r.val) : null);
+      const dot = rag ? `<span class="summary-rag-dot ${rag}"></span>` : '';
+      return `
+        <div class="summary-row">
+          <span class="summary-row-label">${r.label}</span>
+          <span class="summary-row-value">${r.value}${dot}</span>
+        </div>`;
+    }).join('');
+
     modal.innerHTML = `
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <span class="modal-header-title">Today's Training</span>
-        <button class="btn btn-secondary" id="result-close-btn"
-                style="width:auto;min-height:32px;padding:0 14px;font-size:15px;">Done</button>
+        <span class="modal-header-title">Daily Readiness</span>
+        <button class="modal-close-btn" id="log-modal-close">✕</button>
       </div>
       <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-md)">
         <div class="result-score-ring">
-          ${buildScoreRing(result.score, result.rag)}
-          ${result.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${result.autoRed}</div>` : ''}
+          ${buildScoreRing(checkin.score, checkin.rag)}
+          ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}
         </div>
-
-        <div class="result-volume-label">${session.label || 'Rest Day'}</div>
-        <div class="result-volume-sublabel">${getVolumeSublabel(session, result.rag)}</div>
-
-        ${buildSessionCard(session)}
-
-        <div class="section-spacer"></div>
+        <div class="card-section-title" style="padding-left:0;padding-top:var(--space-lg);">Your answers</div>
+        <div class="summary-rows" style="margin-bottom:var(--space-md)">
+          ${summaryHTML}
+        </div>
+        <button class="btn btn-secondary" id="btn-edit-checkin">Edit Check-in</button>
         <div class="page-bottom-pad"></div>
       </div>
     `;
 
-    document.getElementById('result-close-btn').addEventListener('click', close);
+    document.getElementById('log-modal-close')?.addEventListener('click', close);
+    document.getElementById('btn-edit-checkin')?.addEventListener('click', () => {
+      close();
+      setTimeout(() => openForEdit(), 450);
+    });
 
-    // Also update the log page behind the modal
     renderLogPage();
   }
 
@@ -472,7 +485,6 @@ const LogModal = (() => {
             </div>`).join('')}
         </div>`;
     }
-
     const icons = { bjj: '🥋', golf: '⛳', cycle: '🚴', rest: '💤', race: '🏁' };
     const icon  = icons[session.type] || '📋';
     const note  = session.note && session.note !== 'undefined' ? session.note : '';
@@ -496,7 +508,7 @@ const LogModal = (() => {
   // ─── Log Page Render ──────────────────────────────────────
 
   function renderLogPage() {
-    const page    = document.getElementById('page-log');
+    const page = document.getElementById('page-log');
     if (!page) return;
     const checkin = Store.getTodayCheckIn();
 
@@ -543,6 +555,9 @@ const LogModal = (() => {
   // ─── Event Binding ────────────────────────────────────────
 
   function bindEvents() {
+    // Close
+    document.getElementById('log-modal-close')?.addEventListener('click', close);
+
     // Back
     document.getElementById('modal-back-btn')?.addEventListener('click', () => {
       if (currentStep > 0) showStep(currentStep - 1, -1);
@@ -552,33 +567,30 @@ const LogModal = (() => {
     const modal  = document.getElementById('log-modal');
     const handle = modal?.querySelector('.modal-handle');
     if (modal && handle) {
-      let startY   = 0;
-      let currentY = 0;
-      let dragging = false;
+      let startY = 0, lastY = 0, dragging = false;
 
       handle.addEventListener('touchstart', e => {
         startY   = e.touches[0].clientY;
-        currentY = startY;
+        lastY    = startY;
         dragging = true;
         modal.style.transition = 'none';
-      }, { passive: true });
+        e.preventDefault();
+      }, { passive: false });
 
-      document.addEventListener('touchmove', e => {
+      handle.addEventListener('touchmove', e => {
         if (!dragging) return;
-        currentY    = e.touches[0].clientY;
-        const raw   = currentY - startY;
-        const delta = raw < 0
-          ? Math.max(-30, raw * 0.15)
-          : Math.min(120, raw * 0.6);
+        lastY = e.touches[0].clientY;
+        const delta = Math.max(0, lastY - startY);
         modal.style.transform = `translateY(${delta}px)`;
-      }, { passive: true });
+        e.preventDefault();
+      }, { passive: false });
 
-      document.addEventListener('touchend', () => {
+      handle.addEventListener('touchend', () => {
         if (!dragging) return;
-        dragging    = false;
-        const delta = Math.max(0, currentY - startY);
+        dragging = false;
+        const delta = Math.max(0, lastY - startY);
         modal.style.transition = '';
-        if (delta > 100) {
+        if (delta > 120) {
           close();
         } else {
           modal.style.transform = 'translateY(0)';
@@ -604,7 +616,7 @@ const LogModal = (() => {
 
     // RHR next
     document.getElementById('next-rhr')?.addEventListener('click', () => {
-      const val = parseInt(getEl('input-rhr')?.value);
+      const val = parseFloat(getEl('input-rhr')?.value);
       if (isNaN(val) || val < 30 || val > 200) return alert('Enter a valid heart rate');
       answers.rhr = val;
       advance();
@@ -618,7 +630,7 @@ const LogModal = (() => {
       advance();
     });
 
-    // Energy — just store on change, next button advances
+    // Energy — store on change
     document.getElementById('input-energy')?.addEventListener('change', e => {
       answers.energy = parseInt(e.target.value);
     });
@@ -645,7 +657,7 @@ const LogModal = (() => {
 
     // Joint pain slider
     document.getElementById('input-joint')?.addEventListener('input', e => {
-      const val     = parseInt(e.target.value);
+      const val = parseInt(e.target.value);
       answers.jointPain = val;
       const display = document.getElementById('joint-value-display');
       const slider  = document.getElementById('input-joint');
@@ -667,35 +679,29 @@ const LogModal = (() => {
       const result = calculateScore(answers);
       const data   = { ...answers, ...result };
       Store.saveCheckIn(data);
-      // Show result screen instead of closing
-      showResult(result);
+      showResultWithEdit(data);
     });
   }
 
   // ─── Open / Close ──────────────────────────────────────────
 
   function openForEdit() {
-    // Open the form fresh but don't delete the existing check-in yet
-    // Only on final submit do we overwrite it
+    const existing = Store.getTodayCheckIn();
     currentStep = 0;
-    answers = { sleepScore: null, recoveryScore: null, rhr: null,
-                motivation: null, energy: null, illness: false,
-                soreness: null, jointPain: 0 };
+    answers = {
+      sleepScore:    existing?.sleepScore    ?? null,
+      recoveryScore: existing?.recoveryScore ?? null,
+      rhr:           existing?.rhr           ?? null,
+      motivation:    existing?.motivation    ?? null,
+      energy:        existing?.energy        ?? null,
+      illness:       existing?.illness       ?? false,
+      soreness:      existing?.soreness      ?? null,
+      jointPain:     existing?.jointPain     ?? 0,
+    };
 
     let backdrop = document.getElementById('log-modal-backdrop');
     if (backdrop) backdrop.remove();
     buildModal();
-
-    // Mark modal as edit mode so submit overwrites rather than treating as new
-    const modal = document.getElementById('log-modal');
-    if (modal) modal.dataset.editMode = 'true';
-
-    const editBackdrop = document.getElementById('log-modal-backdrop');
-    if (editBackdrop) {
-      editBackdrop.addEventListener('click', e => {
-        if (e.target === editBackdrop) close();
-      });
-    }
 
     requestAnimationFrame(() => {
       document.getElementById('log-modal-backdrop')?.classList.add('open');
@@ -705,19 +711,18 @@ const LogModal = (() => {
   }
 
   function open() {
-    // If already checked in today, always show the overview
-    // (edit mode is only entered via the Edit button inside the overview)
     const existing = Store.getTodayCheckIn();
     if (existing) {
       openWithResult(existing);
       return;
     }
 
-    // Reset state
     currentStep = 0;
-    answers = { sleepScore: null, recoveryScore: null, rhr: null,
-                motivation: null, energy: null, illness: false,
-                soreness: null, jointPain: 0 };
+    answers = {
+      sleepScore: null, recoveryScore: null, rhr: null,
+      motivation: null, energy: null, illness: false,
+      soreness: null, jointPain: 0,
+    };
 
     let backdrop = document.getElementById('log-modal-backdrop');
     if (backdrop) backdrop.remove();
@@ -734,75 +739,18 @@ const LogModal = (() => {
     let backdrop = document.getElementById('log-modal-backdrop');
     if (backdrop) backdrop.remove();
 
-    const backdropEl  = document.createElement('div');
-    backdropEl.id     = 'log-modal-backdrop';
+    const backdropEl     = document.createElement('div');
+    backdropEl.id        = 'log-modal-backdrop';
     backdropEl.innerHTML = `<div id="log-modal"></div>`;
     document.getElementById('app').appendChild(backdropEl);
 
     backdropEl.addEventListener('click', e => {
       if (e.target === backdropEl) close();
     });
+
     requestAnimationFrame(() => {
       backdropEl.classList.add('open');
       showResultWithEdit(checkin);
-    });
-  }
-
-  function showResultWithEdit(checkin) {
-    const modal = document.getElementById('log-modal');
-    if (!modal) return;
-
-    const rows = [
-      { label: 'Sleep Score',    value: `${checkin.sleepScore}%`,    metric: 'sleepScore',    val: checkin.sleepScore },
-      { label: 'Recovery Score', value: `${checkin.recoveryScore}%`, metric: 'recoveryScore', val: checkin.recoveryScore },
-      { label: 'Resting HR',     value: `${checkin.rhr} bpm`,        metric: 'rhr',           val: checkin.rhr },
-      { label: 'Motivation',     value: cap(checkin.motivation),     metric: 'motivation',    val: checkin.motivation },
-      { label: 'Energy',         value: `${checkin.energy} / 10`,    metric: 'energy',        val: checkin.energy },
-      { label: 'Soreness',       value: cap(checkin.soreness),       metric: 'soreness',      val: checkin.soreness },
-      { label: 'Joint Pain',     value: `${checkin.jointPain} / 10`, metric: 'jointPain',     val: checkin.jointPain },
-    ];
-
-    if (checkin.illness) {
-      rows.push({ label: 'Illness/Fever', value: 'Yes — Auto Red', metric: null, val: null, forceRed: true });
-    }
-
-    const summaryHTML = rows.map(r => {
-      const rag = r.forceRed ? 'red' : (r.metric ? getMetricRag(r.metric, r.val) : null);
-      const dot = rag ? `<span class="summary-rag-dot ${rag}"></span>` : '';
-      return `
-        <div class="summary-row">
-          <span class="summary-row-label">${r.label}</span>
-          <span class="summary-row-value">${r.value}${dot}</span>
-        </div>`;
-    }).join('');
-
-    modal.innerHTML = `
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <span class="modal-header-title">Today's Check-in</span>
-        <button class="modal-close-btn" id="log-modal-close">✕</button>
-      </div>
-      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-md)">
-
-        <div class="result-score-ring">
-          ${buildScoreRing(checkin.score, checkin.rag)}
-          ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}
-        </div>
-
-        <div class="card-section-title" style="padding-left:0;padding-top:var(--space-lg);">Your answers</div>
-        <div class="summary-rows" style="margin-bottom:var(--space-md)">
-          ${summaryHTML}
-        </div>
-
-        <button class="btn btn-secondary" id="btn-edit-checkin">Edit Check-in</button>
-        <div class="page-bottom-pad"></div>
-      </div>
-    `;
-
-    document.getElementById('log-modal-close')?.addEventListener('click', close);
-    document.getElementById('btn-edit-checkin')?.addEventListener('click', () => {
-      close();
-      setTimeout(() => openForEdit(), 450);
     });
   }
 
@@ -814,7 +762,6 @@ const LogModal = (() => {
       backdrop.classList.remove('open');
       setTimeout(() => backdrop.remove(), 400);
     }
-    // Return nav pill to previous page
     NavBar.setActiveByTarget(Router.getCurrentPage());
   }
 
@@ -826,23 +773,17 @@ const LogModal = (() => {
   }
 
   function checkMidnightReset() {
-    // Store the last known date — if it's changed since last visit, nothing to do
-    // (Store.getTodayCheckIn already keys by today's date, so old entries are
-    // automatically ignored. We just need to schedule a live reset if the app
-    // stays open past midnight.)
     scheduleMidnightReset();
   }
 
   function scheduleMidnightReset() {
-    const now       = new Date();
-    const midnight  = new Date();
+    const now      = new Date();
+    const midnight = new Date();
     midnight.setHours(24, 0, 0, 0);
-    const msUntil   = midnight - now;
+    const msUntil  = midnight - now;
 
     setTimeout(() => {
-      // Midnight has passed — re-render the log page so it shows empty state
       renderLogPage();
-      // Schedule the next one
       scheduleMidnightReset();
     }, msUntil);
   }

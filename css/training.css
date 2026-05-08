@@ -107,11 +107,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px var(--space-md);
+  padding: 12px var(--space-md);
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  min-height: 56px;
+  min-height: 64px;
 }
 
 /* ─── Day Info ───────────────────────────────────────────── */
@@ -226,3 +226,36 @@
 .no-programme-icon  { font-size: 40px; margin-bottom: var(--space-sm); }
 .no-programme-title { font-size: var(--text-title3); font-weight: 600; color: var(--label-primary); margin-bottom: var(--space-xs); }
 .no-programme-sub   { font-size: var(--text-subhead); color: var(--label-tertiary); line-height: 1.5; }
+
+/* ─── Week Summary Strip ─────────────────────────────────── */
+.week-summary-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: 12px var(--space-md);
+  border-top: 0.5px solid var(--separator-opaque);
+  flex-wrap: wrap;
+}
+
+.week-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.week-summary-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  width: 44px;
+  text-align: center;
+}
+
+.week-summary-count {
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--label-tertiary);
+}

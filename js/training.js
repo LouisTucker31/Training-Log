@@ -152,6 +152,41 @@ const TrainingPage = (() => {
     });
     document.getElementById('session-modal-close').addEventListener('click', closeSessionModal);
 
+    // Drag to dismiss
+    const sessionModal  = document.getElementById('session-modal');
+    const sessionHandle = sessionModal?.querySelector('.modal-handle');
+    if (sessionModal && sessionHandle) {
+      let startY = 0, lastY = 0, dragging = false;
+
+      sessionHandle.addEventListener('touchstart', e => {
+        startY   = e.touches[0].clientY;
+        lastY    = startY;
+        dragging = true;
+        sessionModal.style.transition = 'none';
+        e.preventDefault();
+      }, { passive: false });
+
+      sessionHandle.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        lastY = e.touches[0].clientY;
+        const delta = Math.max(0, lastY - startY);
+        sessionModal.style.transform = `translateY(${delta}px)`;
+        e.preventDefault();
+      }, { passive: false });
+
+      sessionHandle.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
+        const delta = Math.max(0, lastY - startY);
+        sessionModal.style.transition = '';
+        if (delta > 120) {
+          closeSessionModal();
+        } else {
+          sessionModal.style.transform = 'translateY(0)';
+        }
+      });
+    }
+
     // Auto-save notes
     document.getElementById('session-notes-input')?.addEventListener('input', () => {
       saveNotes(dateStr);
@@ -260,7 +295,10 @@ const TrainingPage = (() => {
     const backdrop = document.getElementById('session-modal-backdrop');
     const modal    = document.getElementById('session-modal');
     if (!backdrop) return;
-    if (modal) modal.style.transform = '';
+    if (modal) {
+      modal.style.transition = '';
+      modal.style.transform  = 'translateY(100%)';
+    }
     backdrop.classList.remove('open');
     setTimeout(() => backdrop.remove(), 400);
   }
@@ -497,6 +535,36 @@ const TrainingPage = (() => {
     return map[type] || 'REST';
   }
 
+  function buildWeekSummary(dates) {
+    let gym = 0, bjj = 0, golf = 0, miles = 0;
+
+    dates.forEach(dateStr => {
+      const session = sessionForDate(dateStr);
+      if (session.type === 'hypertrophy') gym++;
+      if (session.type === 'bjj')         bjj++;
+      if (session.type === 'golf')        golf++;
+      if (session.type === 'cycle')       miles += session.distance || 0;
+    });
+
+    const items = [
+      { type: 'hypertrophy', label: 'GYM',  count: gym,   show: gym > 0  },
+      { type: 'bjj',         label: 'BJJ',  count: bjj,   show: bjj > 0  },
+      { type: 'golf',        label: 'GOLF', count: golf,  show: golf > 0 },
+      { type: 'cycle',       label: 'RIDE', count: null,  show: miles > 0,
+        display: Units.isImperial() ? `${miles} mi` : `${Math.round(miles * 1.60934)} km` },
+    ].filter(i => i.show);
+
+    if (!items.length) return '';
+
+    const html = items.map(item => `
+      <div class="week-summary-item">
+        <span class="week-summary-badge acc-type-badge type-${item.type}">${item.label}</span>
+        <span class="week-summary-count">${item.count !== null ? `× ${item.count}` : item.display}</span>
+      </div>`).join('');
+
+    return `<div class="week-summary-strip">${html}</div>`;
+  }
+
   // ─── Render ───────────────────────────────────────────────
 
   function render() {
@@ -565,6 +633,7 @@ const TrainingPage = (() => {
     const groupCard = list.querySelector('.acc-group-card');
     if (!groupCard) return;
 
+    const summaryHTML = buildWeekSummary(dates);
     groupCard.innerHTML = dates.map((dateStr, i) => {
       const d         = parseLocalDate(dateStr);
       const session   = sessionForDate(dateStr);
@@ -593,7 +662,7 @@ const TrainingPage = (() => {
             <span class="acc-chevron">${completed ? '<span class="acc-tick-done">✓</span>' : '›'}</span>
           </div>
         </div>`;
-    }).join('');
+    }).join('') + summaryHTML;
 
     groupCard.querySelectorAll('.acc-item').forEach(item => {
       item.addEventListener('click', () => openSessionModal(item.dataset.date));
