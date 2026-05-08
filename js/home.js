@@ -9,7 +9,7 @@ const HomePage = (() => {
   function getGreeting(name) {
     const h = new Date().getHours();
     const time = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-    return name ? `${time}, ${name}` : time;
+    return { time, name: name || '' };
   }
 
   function getDateString() {
@@ -18,9 +18,31 @@ const HomePage = (() => {
     });
   }
 
+  // ─── Recovery Delta ───────────────────────────────────────
+
+  function getRecoveryDelta(allCheckIns) {
+    const today     = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const todayKey = today.toISOString().slice(0, 10);
+    const yestKey  = yesterday.toISOString().slice(0, 10);
+
+    const todayCI = allCheckIns[todayKey];
+    const yestCI  = allCheckIns[yestKey];
+
+    if (!todayCI || !yestCI) return null;
+    if (typeof todayCI.score !== 'number' || typeof yestCI.score !== 'number') return null;
+    if (isNaN(todayCI.score) || isNaN(yestCI.score)) return null;
+
+    const delta = todayCI.score - yestCI.score;
+    return delta;
+  }
+
   // ─── Recovery Ring ────────────────────────────────────────
 
-  function buildRing(checkin) {
+  function buildRing(checkin, delta) {
     if (!checkin) {
       return `
         <div class="home-ring-wrap">
@@ -30,7 +52,7 @@ const HomePage = (() => {
               font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
               font-size="15" fill="#AEAEB2">No check-in</text>
           </svg>
-          <div class="home-ring-hint">Tap + to check in</div>
+          <div class="home-ring-hint">Tap Log below to check in</div>
         </div>`;
     }
 
@@ -61,6 +83,10 @@ const HomePage = (() => {
             font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
             font-size="32" font-weight="700" fill="${colour}">${score}%</text>
         </svg>
+        ${delta !== null ? `
+        <div class="home-ring-delta ${delta >= 0 ? 'up' : 'down'}">
+          ${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta)} from yesterday
+        </div>` : ''}
       </div>`;
   }
 
@@ -307,13 +333,40 @@ const HomePage = (() => {
     const session    = TrainingData.getTodaySession(profile.programmeStart, rag);
     const stats      = getWeekStats(allCI, profile.programmeStart);
 
+    if (!profile.programmeStart) {
+      page.innerHTML = `
+        <div class="home-page">
+          <div class="home-header">
+            <div class="home-header-top">
+              <div>
+                <div class="home-greeting">${getGreeting(profile.name).time}</div>
+                ${getGreeting(profile.name).name ? `<div class="home-greeting home-greeting--name">${getGreeting(profile.name).name}</div>` : ''}
+              </div>
+            </div>
+            <div class="home-date">${getDateString()}</div>
+          </div>
+          <div class="home-no-programme">
+            <div class="home-no-programme-icon">📅</div>
+            <div class="home-no-programme-title">No programme set</div>
+            <div class="home-no-programme-sub">Go to Profile and set your programme start date to get started.</div>
+            <button class="btn btn-primary" id="home-go-profile" style="margin-top:24px;">Go to Profile</button>
+          </div>
+        </div>`;
+      document.getElementById('home-go-profile')?.addEventListener('click', () => {
+        Router.showPage('profile');
+        NavBar.setActiveByTarget('profile');
+      });
+      return;
+    }
+
     page.innerHTML = `
       <div class="home-page">
 
         <div class="home-header">
           <div class="home-header-top">
             <div>
-              <div class="home-greeting">${getGreeting(profile.name)}</div>
+              <div class="home-greeting">${getGreeting(profile.name).time}</div>
+          ${getGreeting(profile.name).name ? `<div class="home-greeting home-greeting--name">${getGreeting(profile.name).name}</div>` : ''}
               <div class="home-date">${getDateString()}</div>
             </div>
             ${stats.streak > 0 ? `
@@ -324,7 +377,7 @@ const HomePage = (() => {
           </div>
         </div>
 
-        ${buildRing(checkin)}
+        ${buildRing(checkin, getRecoveryDelta(allCI))}
         ${buildSessionCard(session)}
         ${buildProgressBar(profile.programmeStart)}
         ${buildStatTiles(stats, weekNum)}

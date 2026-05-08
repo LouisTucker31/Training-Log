@@ -500,7 +500,7 @@ const LogModal = (() => {
         <div class="log-empty-state">
           <div class="log-empty-icon">🌅</div>
           <div class="log-empty-title">No check-in yet</div>
-          <div class="log-empty-subtitle">Tap the + button below to log your morning recovery and see today's workout.</div>
+          <div class="log-empty-subtitle">Tap Log below to start your morning check-in.</div>
         </div>`;
       return;
     }
@@ -782,7 +782,7 @@ const LogModal = (() => {
           ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}
         </div>
 
-        <div class="card-section-title" style="padding-left:0;padding-top:0;">Your answers</div>
+        <div class="card-section-title" style="padding-left:0;padding-top:var(--space-lg);">Your answers</div>
         <div class="summary-rows" style="margin-bottom:var(--space-md)">
           ${summaryHTML}
         </div>

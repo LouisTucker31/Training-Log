@@ -1,0 +1,208 @@
+/* ============================================================
+   insights.css — Insights page
+   ============================================================ */
+
+/* ─── Page Shell ─────────────────────────────────────────── */
+
+.insights-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.insights-header {
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
+  flex-shrink: 0;
+}
+
+.insights-header h1 {
+  font-size: var(--text-large-title);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--label-primary);
+}
+
+.insights-header-sub {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  margin-top: 2px;
+}
+
+/* ─── Scroll Body ────────────────────────────────────────── */
+
+.insights-body {
+  flex: 1;
+  padding: 0 var(--space-md);
+  padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ─── Section Label ──────────────────────────────────────── */
+
+.insights-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #8E8E93;
+  margin-bottom: 10px;
+}
+
+/* ─── Card ───────────────────────────────────────────────── */
+
+.insights-card {
+  background: #F9F9F9;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+  padding: var(--space-md);
+}
+
+/* ─── SVG Chart Shared ───────────────────────────────────── */
+
+.insights-chart-svg {
+  width: 100%;
+  overflow: visible;
+  display: block;
+}
+
+/* ─── Volume Filter Row ──────────────────────────────────── */
+
+.insights-filter-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.insights-filter-btn {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--label-secondary);
+  background: var(--fill-tertiary);
+  border: none;
+  border-radius: 100px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.insights-filter-btn.active {
+  background: var(--colour-blue);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.insights-filter-btn:active:not(.active) {
+  opacity: 0.6;
+}
+
+/* ─── Stat Tiles Grid ────────────────────────────────────── */
+
+.insights-tiles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.insights-tile {
+  background: #F9F9F9;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.insights-tile-sub {
+  font-size: 11px;
+  color: #AEAEB2;
+  font-weight: 500;
+}
+
+.insights-tile-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.insights-tile-label {
+  font-size: 12px;
+  color: #8E8E93;
+}
+
+/* ─── RAG Breakdown Bars ─────────────────────────────────── */
+
+.insights-rag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.insights-rag-row:last-child {
+  margin-bottom: 0;
+}
+
+.insights-rag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.insights-rag-label {
+  font-size: var(--text-subhead);
+  font-weight: 500;
+  color: var(--label-primary);
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.insights-rag-track {
+  flex: 1;
+  height: 8px;
+  background: var(--fill-tertiary);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.insights-rag-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s ease;
+}
+
+.insights-rag-pct {
+  font-size: var(--text-footnote);
+  color: var(--label-tertiary);
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Empty State ────────────────────────────────────────── */
+
+.insights-empty {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.insights-empty-icon {
+  font-size: 36px;
+  margin-bottom: var(--space-sm);
+}
+
+.insights-empty-text {
+  font-size: var(--text-subhead);
+  color: var(--label-tertiary);
+  line-height: 1.5;
+}

@@ -40,6 +40,15 @@ const Store = (() => {
       name:           '',
       rhrBaseline:    59.1,
       programmeStart: null,
+      avatar:         '🏋️',
+      age:            '',
+      gender:         '',
+      height:         '',
+      weight:         '',
+      goal:           '',
+      bjjBelt:        '',
+      bjjStripes:     '',
+      golfHandicap:   '',
     };
   }
 

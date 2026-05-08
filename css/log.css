@@ -537,3 +537,37 @@
   color: var(--label-tertiary);
   line-height: 1.4;
 }
+
+/* ─── Session Modal ──────────────────────────────────────── */
+#session-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+#session-modal-backdrop.open {
+  pointer-events: auto;
+}
+
+#session-modal {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90%;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--bg-modal);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(100%);
+  transition: transform 540ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#session-modal-backdrop.open #session-modal {
+  transform: translateY(0);
+}

@@ -1,5 +1,5 @@
 /* ============================================================
-   training.css — Training accordion week view
+   training.css — Training week view
    ============================================================ */
 
 .training-page {
@@ -36,9 +36,11 @@
 }
 
 .week-nav-label {
-  font-size: var(--text-headline);
+  font-size: var(--text-footnote);
   font-weight: 600;
-  color: var(--label-primary);
+  color: var(--label-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .week-nav-btn {
@@ -58,127 +60,100 @@
   user-select: none;
 }
 
-.week-nav-btn:active  { opacity: 0.6; }
+.week-nav-btn:active   { opacity: 0.6; }
 .week-nav-btn:disabled { opacity: 0.25; cursor: default; }
 
-/* ─── Accordion List ─────────────────────────────────────── */
+/* ─── Grouped List Card ──────────────────────────────────── */
 .accordion-list {
   padding: 0 var(--space-md);
   padding-bottom: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-xl));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+}
+
+.acc-group-card {
+  background: #F9F9F9;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 /* ─── Accordion Item ─────────────────────────────────────── */
 .acc-item {
-  background: #F9F9F9;
-  border-radius: var(--radius-md);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
-  overflow: hidden;
+  position: relative;
+}
+
+.acc-item + .acc-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 56px;
+  right: 0;
+  height: 0.5px;
+  background: var(--separator-opaque);
+  opacity: 0.5;
 }
 
 .acc-item.is-today {
-  box-shadow: var(--shadow-card), 0 0 0 1.5px var(--colour-blue);
+  background: rgba(0, 122, 255, 0.04);
 }
 
 .acc-item.is-completed {
-  background: rgba(48, 209, 88, 0.08);
+  background: rgba(48, 209, 88, 0.06);
 }
 
-/* ─── Accordion Header (tap target) ─────────────────────── */
+/* ─── Accordion Header ───────────────────────────────────── */
 .acc-header {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: 12px var(--space-md);
+  gap: 12px;
+  padding: 10px var(--space-md);
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  min-height: 64px;
+  min-height: 56px;
 }
 
+/* ─── Day Info ───────────────────────────────────────────── */
 .acc-day-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 36px;
+  width: 28px;
   flex-shrink: 0;
 }
 
 .acc-day-name {
-  font-size: var(--text-caption);
+  font-size: 10px;
   font-weight: 600;
   color: var(--label-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .acc-day-num {
-  font-size: var(--text-title3);
-  font-weight: 700;
+  font-size: var(--text-headline);
+  font-weight: 600;
   color: var(--label-primary);
-  line-height: 1.1;
+  line-height: 1.2;
+}
+
+.acc-item.is-today .acc-day-name {
+  color: var(--colour-blue);
 }
 
 .acc-item.is-today .acc-day-num {
   color: var(--colour-blue);
 }
 
-.acc-icon {
-  display: none;
-}
-
-.acc-session-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.acc-session-title {
-  font-size: var(--text-headline);
-  font-weight: 600;
-  color: var(--label-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.acc-session-sub {
-  font-size: var(--text-footnote);
-  color: var(--label-tertiary);
-  margin-top: 1px;
-}
-
-.acc-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.acc-complete-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 100px;
-  background: var(--rag-green);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  color: white;
-  font-weight: 700;
-}
-
+/* ─── Type Badge ─────────────────────────────────────────── */
 .acc-type-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  min-width: 44px;
-  text-align: center;
+  letter-spacing: 0.4px;
+  padding: 3px 7px;
+  border-radius: 5px;
   flex-shrink: 0;
+  text-align: center;
 }
 
 .acc-type-badge.type-hypertrophy { background: rgba(0,122,255,0.1);   color: #007AFF; }
@@ -189,8 +164,30 @@
 .acc-type-badge.type-none        { background: rgba(142,142,147,0.1); color: #8E8E93; }
 .acc-type-badge.type-race        { background: rgba(255,159,10,0.1);  color: #FF9F0A; }
 
+/* ─── Session Info ───────────────────────────────────────── */
+.acc-session-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-session-title {
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  color: var(--label-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acc-session-sub {
+  font-size: var(--text-caption);
+  color: var(--label-tertiary);
+  margin-top: 1px;
+}
+
+/* ─── Chevron / Tick ─────────────────────────────────────── */
 .acc-chevron {
-  font-size: 20px;
+  font-size: 18px;
   color: #C7C7CC;
   line-height: 1;
   flex-shrink: 0;
@@ -200,125 +197,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #30D158;
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
-.acc-item.is-open .acc-chevron {
-  transform: rotate(90deg);
-}
-
-/* ─── Accordion Body ─────────────────────────────────────── */
-.acc-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 380ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.acc-item.is-open .acc-body {
-  max-height: 600px;
-}
-
-.acc-body-inner {
-  padding: var(--space-sm) var(--space-md) var(--space-sm);
-  border-top: 0.5px solid rgba(0,0,0,0.06);
-}
-
-/* ─── Volume Badge ───────────────────────────────────────── */
-.volume-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  margin: var(--space-md) 0 var(--space-sm);
-}
-
-.volume-badge.green { background: var(--fill-tertiary); color: var(--label-tertiary); }
-.volume-badge.amber { background: var(--fill-tertiary); color: var(--label-tertiary); }
-.volume-badge.red   { background: var(--fill-tertiary); color: var(--label-tertiary); }
-.volume-badge.tbd   { background: var(--fill-tertiary); color: var(--label-tertiary); }
-
-/* ─── Exercise List ──────────────────────────────────────── */
-.exercise-card {
-  background: transparent;
-  border-radius: 0;
-  overflow: hidden;
-  margin-bottom: var(--space-md);
-}
-
-.exercise-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 38px;
-  padding: 6px 0;
-  position: relative;
-}
-
-.exercise-row + .exercise-row {
-  border-top: 0.5px solid rgba(0,0,0,0.06);
-}
-
-.exercise-name {
-  font-size: var(--text-subhead);
-  color: var(--label-tertiary);
-}
-
-.exercise-sets {
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  color: var(--label-tertiary);
-}
-
-/* ─── Complete Tick ──────────────────────────────────────── */
-.acc-tick {
-  width: 26px;
-  height: 26px;
-  border-radius: 100px;
-  border: 2px solid var(--separator-opaque);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.acc-tick.ticked {
-  background: var(--rag-green);
-  border-color: var(--rag-green);
-}
-
-.acc-tick-check {
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  display: none;
-}
-
-.acc-tick.ticked .acc-tick-check {
-  display: block;
-}
-
-/* ─── Rest / No programme ────────────────────────────────── */
-.rest-body {
-  padding: var(--space-md);
-  text-align: center;
-  color: var(--label-tertiary);
-  font-size: var(--text-subhead);
-}
-
+/* ─── No programme ───────────────────────────────────────── */
 .no-programme-card {
   background: var(--bg-card);
   border-radius: var(--radius-md);

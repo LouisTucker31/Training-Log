@@ -24,7 +24,11 @@
   font-weight: 700;
   color: #000000;
   letter-spacing: -0.5px;
-  line-height: 1.2;
+  line-height: 1.1;
+}
+
+.home-greeting--name {
+  color: #000000;
 }
 
 .home-date {
@@ -253,4 +257,47 @@
   background: #007AFF;
   border-radius: 3px;
   transition: width 0.6s ease;
+}
+
+.home-ring-delta {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.home-ring-delta.up   { color: #30D158; }
+.home-ring-delta.down { color: #FF453A; }
+
+/* ─── No Programme ────────────────────────────────────────── */
+
+.home-no-programme {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--space-xl) var(--space-md);
+  text-align: center;
+  margin-top: 40px;
+}
+
+.home-no-programme-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-md);
+}
+
+.home-no-programme-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: var(--space-sm);
+}
+
+.home-no-programme-sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  color: #8E8E93;
+  line-height: 1.5;
 }

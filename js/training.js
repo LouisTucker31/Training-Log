@@ -1,11 +1,10 @@
 /* ============================================================
-   training.js — Training accordion week view
+   training.js — Training week view
    ============================================================ */
 
 const TrainingPage = (() => {
 
-  let weekOffset  = 0;
-  let openDate    = null;
+  let weekOffset = 0;
 
   // ─── Date Helpers ─────────────────────────────────────────
 
@@ -68,7 +67,6 @@ const TrainingPage = (() => {
     try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
     renderList();
     if (typeof HomePage !== 'undefined') HomePage.render();
-    // Update modal button if still open
     updateModalButton(dateStr);
   }
 
@@ -76,9 +74,12 @@ const TrainingPage = (() => {
     const btn = document.getElementById('session-modal-complete-btn');
     if (!btn || btn.dataset.date !== dateStr) return;
     const completed = isCompleted(dateStr);
-    btn.textContent  = completed ? 'Completed ✓' : 'Mark as Complete';
+    btn.textContent = completed ? 'Completed ✓' : 'Mark as Complete';
     btn.dataset.completed = completed ? 'true' : 'false';
-    btn.style.background  = completed ? '#AEAEB2' : '#007AFF';
+    btn.className = `btn ${completed ? 'btn-secondary' : 'btn-primary'}`;
+    btn.style.minHeight = '52px';
+    btn.style.fontSize  = '17px';
+    btn.style.opacity   = completed ? '0.6' : '1';
   }
 
   // ─── Session Modal ────────────────────────────────────────
@@ -88,66 +89,51 @@ const TrainingPage = (() => {
     if (existing) existing.remove();
 
     const profile   = Store.getProfile();
-    const ci        = Store.getCheckIn(dateStr);
-    const rag       = ci?.rag || 'green';
+    const ci        = Store.getCheckIn(dateStr) || {};
+    const rag       = ci.rag || 'green';
     const session   = TrainingData.getSessionForDate(dateStr, profile.programmeStart, rag);
     const completed = isCompleted(dateStr);
     const isFuture  = dateStr > todayStr();
 
-    const title    = sessionTitle(session);
-    const bodyHTML = buildModalBody(session);
+    // Snapshot belt and handicap into the check-in when modal opens
+    if (!isFuture && session.type === 'bjj' && profile.bjjBelt) {
+      saveSessionField(dateStr, 'beltSnapshot',    profile.bjjBelt);
+      saveSessionField(dateStr, 'stripesSnapshot', profile.bjjStripes);
+    }
+    if (!isFuture && session.type === 'golf' && profile.golfHandicap) {
+      saveSessionField(dateStr, 'handicapSnapshot', profile.golfHandicap);
+    }
+
+    const title   = sessionTitle(session);
+    const bodyHTML = buildModalBody(session, dateStr);
     const btnText  = completed ? 'Completed ✓' : 'Mark as Complete';
-    const btnBg    = completed ? '#AEAEB2' : '#007AFF';
 
     const d     = parseLocalDate(dateStr);
     const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const backdrop = document.createElement('div');
     backdrop.id    = 'session-modal-backdrop';
-    backdrop.style.cssText = `
-      position:absolute;inset:0;z-index:200;
-      background:rgba(0,0,0,0.4);
-      display:flex;align-items:flex-end;
-    `;
 
     backdrop.innerHTML = `
-      <div id="session-modal" style="
-        background:#FFFFFF;
-        border-radius:20px 20px 0 0;
-        width:100%;
-        height:90%;
-        display:flex;
-        flex-direction:column;
-        transform:translateY(100%);
-        transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);
-        will-change:transform;
-      ">
-        <div style="width:36px;height:4px;background:#E5E5EA;border-radius:2px;margin:12px auto 0;flex-shrink:0;"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;">
+      <div id="session-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
           <div>
-            <div style="font-size:17px;font-weight:700;color:#000;">${title}</div>
-            <div style="font-size:13px;color:#8E8E93;margin-top:2px;">${label}</div>
+            <span class="modal-header-title">${title}</span>
+            <div style="font-size:13px;color:var(--label-tertiary);margin-top:2px;">${label}</div>
           </div>
-          <button id="session-modal-close" style="
-            background:rgba(142,142,147,0.12);border:none;border-radius:50%;
-            width:30px;height:30px;font-size:16px;color:#8E8E93;
-            display:flex;align-items:center;justify-content:center;cursor:pointer;
-          ">✕</button>
+          <button class="modal-close-btn" id="session-modal-close">✕</button>
         </div>
-        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 0;">
+        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 var(--space-md) 0;">
           ${bodyHTML}
           ${!isFuture ? `
-          <div style="padding:16px 0 100px;">
-            <button id="session-modal-complete-btn"
+          <div style="padding:var(--space-md) 0 100px;">
+            <button class="btn ${completed ? 'btn-secondary' : 'btn-primary'}"
+              id="session-modal-complete-btn"
               data-date="${dateStr}"
               data-completed="${completed}"
-              style="
-                width:100%;min-height:52px;border:none;border-radius:12px;
-                background:${btnBg};color:#fff;
-                font-size:17px;font-weight:600;cursor:pointer;
-                font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-                transition:background 0.2s;
-              ">${btnText}</button>
+              style="min-height:52px;font-size:17px;opacity:${completed ? '0.6' : '1'};"
+            >${btnText}</button>
           </div>` : ''}
         </div>
       </div>
@@ -156,62 +142,133 @@ const TrainingPage = (() => {
     const container = document.getElementById('app') || document.body;
     container.appendChild(backdrop);
 
-    // Animate in
-    setTimeout(() => {
-      document.getElementById('session-modal').style.transform = 'translateY(0)';
-    }, 20);
+    requestAnimationFrame(() => {
+      backdrop.classList.add('open');
+    });
+
     // Close handlers
     backdrop.addEventListener('click', e => {
       if (e.target === backdrop) closeSessionModal();
     });
     document.getElementById('session-modal-close').addEventListener('click', closeSessionModal);
 
+    // Auto-save notes
+    document.getElementById('session-notes-input')?.addEventListener('input', () => {
+      saveNotes(dateStr);
+    });
+
+    // BJJ type — multi-select, update in place
+    document.getElementById('bjj-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const all   = Store.getAllCheckIns();
+        const entry = all[dateStr] || { date: dateStr };
+        let types   = Array.isArray(entry.bjjTypes) ? [...entry.bjjTypes] : [];
+        const t     = btn.dataset.type;
+        if (types.includes(t)) {
+          types = types.filter(x => x !== t);
+        } else {
+          types.push(t);
+        }
+        entry.bjjTypes  = types;
+        all[dateStr]    = entry;
+        try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+        // Update button styles in place
+        document.getElementById('bjj-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
+          const selected = types.includes(b.dataset.type);
+          b.style.border     = `1.5px solid ${selected ? '#007AFF' : '#E5E5EA'}`;
+          b.style.background = selected ? 'rgba(0,122,255,0.08)' : '#F9F9F9';
+          b.style.fontWeight = selected ? '600' : '400';
+          b.style.color      = selected ? '#007AFF' : '#000';
+        });
+      });
+    });
+
+    // BJJ rating — update in place
+    document.getElementById('bjj-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rating = parseInt(btn.dataset.rating);
+        saveSessionField(dateStr, 'bjjRating', rating);
+        document.getElementById('bjj-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
+          const n = parseInt(b.dataset.rating);
+          b.style.border     = `1.5px solid ${rating >= n ? '#FF9500' : '#E5E5EA'}`;
+          b.style.background = rating >= n ? 'rgba(255,149,0,0.08)' : '#F9F9F9';
+        });
+      });
+    });
+
+    // Cycle type — update in place
+    document.querySelectorAll('.cycle-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        saveSessionField(dateStr, 'cycleType', btn.dataset.ctype);
+        document.querySelectorAll('.cycle-type-btn').forEach(b => {
+          const selected = b.dataset.ctype === btn.dataset.ctype;
+          b.style.border     = `1.5px solid ${selected ? '#FF9500' : '#E5E5EA'}`;
+          b.style.background = selected ? 'rgba(255,149,0,0.08)' : 'transparent';
+          b.style.fontWeight = selected ? '600' : '400';
+          b.style.color      = selected ? '#FF9500' : '#000';
+        });
+      });
+    });
+
+    // Cycle pace/duration auto-save
+    document.getElementById('cycle-pace')?.addEventListener('input', e => {
+      saveSessionField(dateStr, 'cyclePace', e.target.value);
+    });
+    document.getElementById('cycle-duration')?.addEventListener('input', e => {
+      saveSessionField(dateStr, 'cycleDuration', e.target.value);
+    });
+
+    // Golf type — multi-select, update in place
+    document.getElementById('golf-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const all   = Store.getAllCheckIns();
+        const entry = all[dateStr] || { date: dateStr };
+        let types   = Array.isArray(entry.golfTypes) ? [...entry.golfTypes] : [];
+        const t     = btn.dataset.gtype;
+        if (types.includes(t)) {
+          types = types.filter(x => x !== t);
+        } else {
+          types.push(t);
+        }
+        entry.golfTypes = types;
+        all[dateStr]    = entry;
+        try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+        // Update button styles in place
+        document.getElementById('golf-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
+          const selected = types.includes(b.dataset.gtype);
+          b.style.border     = `1.5px solid ${selected ? '#34C759' : '#E5E5EA'}`;
+          b.style.background = selected ? 'rgba(52,199,89,0.08)' : '#F9F9F9';
+          b.style.fontWeight = selected ? '600' : '400';
+          b.style.color      = selected ? '#34C759' : '#000';
+        });
+      });
+    });
+
     // Complete button
     const btn = document.getElementById('session-modal-complete-btn');
     if (btn) {
       btn.addEventListener('click', () => {
+        saveNotes(dateStr);
         const wasCompleted = isCompleted(dateStr);
         toggleComplete(dateStr);
         if (!wasCompleted) closeSessionModal();
       });
     }
-
-    // Drag to dismiss
-    const modal  = document.getElementById('session-modal');
-    const handle = modal.querySelector('div');
-    let startY = 0, dragging = false;
-
-    handle.addEventListener('touchstart', e => {
-      startY   = e.touches[0].clientY;
-      dragging = true;
-      modal.style.transition = 'none';
-    }, { passive: true });
-
-    document.addEventListener('touchmove', e => {
-      if (!dragging) return;
-      const delta = Math.max(0, e.touches[0].clientY - startY);
-      modal.style.transform = `translateY(${delta * 0.6}px)`;
-    }, { passive: true });
-
-    document.addEventListener('touchend', e => {
-      if (!dragging) return;
-      dragging = false;
-      modal.style.transition = '';
-      const delta = e.changedTouches[0].clientY - startY;
-      if (delta > 100) closeSessionModal();
-      else modal.style.transform = 'translateY(0)';
-    });
   }
 
   function closeSessionModal() {
     const backdrop = document.getElementById('session-modal-backdrop');
     const modal    = document.getElementById('session-modal');
     if (!backdrop) return;
-    if (modal) modal.style.transform = 'translateY(100%)';
-    setTimeout(() => backdrop.remove(), 520);
+    if (modal) modal.style.transform = '';
+    backdrop.classList.remove('open');
+    setTimeout(() => backdrop.remove(), 400);
   }
 
-  function buildModalBody(session) {
+  function buildModalBody(session, dateStr) {
+    const ci    = Store.getCheckIn(dateStr) || {};
+    const notes = ci.sessionNotes || '';
+
     if (session.type === 'rest' || session.type === 'none') {
       return `<p style="color:#8E8E93;font-size:15px;margin-top:8px;">Rest day — take it easy.</p>`;
     }
@@ -222,9 +279,8 @@ const TrainingPage = (() => {
     let html = '';
 
     if (session.type === 'hypertrophy') {
-      const ci  = null;
-      const vol = session.volume || 'green';
-      const labels = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
+      const vol     = session.volume || 'green';
+      const labels  = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
       const colours = { green: '#30D158', amber: '#FF9F0A', red: '#FF453A' };
       html += `
         <div style="
@@ -246,16 +302,150 @@ const TrainingPage = (() => {
     }
 
     if (session.type === 'bjj') {
+      // Use snapshot if available, fall back to profile
+      const profile  = Store.getProfile();
+      const belt     = ci.beltSnapshot    || profile.bjjBelt    || null;
+      const stripes  = ci.stripesSnapshot !== undefined ? ci.stripesSnapshot : (profile.bjjStripes || null);
+      const beltHTML = belt ? detailRow('Belt', `${belt}${stripes !== null && stripes !== '' ? ` · ${stripes} stripe${stripes == 1 ? '' : 's'}` : ''}`) : '';
+      const bjjTypes = Array.isArray(ci.bjjTypes) ? ci.bjjTypes : [];
+
       html += detailRow('Duration', `${session.duration} mins`);
-    }
-    if (session.type === 'cycle') {
-      html += detailRow('Target distance', `${session.distance} miles`);
-    }
-    if (session.type === 'golf') {
-      html += detailRow('Session type', session.focus || 'Range');
+      html += beltHTML;
+      html += `
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Type</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="bjj-type-selector">
+            ${['Regular Class','Competition Class','Open Mat','Competition'].map(t => `
+              <button class="session-type-btn" data-type="${t}"
+                style="padding:10px 8px;border-radius:10px;
+                border:1.5px solid ${bjjTypes.includes(t) ? '#007AFF' : '#E5E5EA'};
+                background:${bjjTypes.includes(t) ? 'rgba(0,122,255,0.08)' : '#F9F9F9'};
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                font-size:13px;font-weight:${bjjTypes.includes(t) ? '600' : '400'};
+                color:${bjjTypes.includes(t) ? '#007AFF' : '#000'};cursor:pointer;">
+                ${t}
+              </button>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Rating</div>
+          <div style="display:flex;gap:8px;" id="bjj-rating-selector">
+            ${[1,2,3,4,5].map(n => `
+              <button class="session-rating-btn" data-rating="${n}"
+                style="flex:1;padding:10px 0;border-radius:10px;
+                border:1.5px solid ${(ci.bjjRating||0) >= n ? '#FF9500' : '#E5E5EA'};
+                background:${(ci.bjjRating||0) >= n ? 'rgba(255,149,0,0.08)' : '#F9F9F9'};
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                font-size:18px;cursor:pointer;">★</button>`).join('')}
+          </div>
+        </div>`;
     }
 
+    if (session.type === 'cycle') {
+      html += detailRow('Target distance', `${session.distance} miles`);
+      html += `
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Details</div>
+          <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #E5E5EA;">
+              <span style="font-size:15px;color:#000;">Target Pace</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input id="cycle-pace" type="tel" placeholder="e.g. 15"
+                  value="${ci.cyclePace || ''}"
+                  style="width:60px;text-align:right;border:none;background:transparent;
+                  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                  font-size:15px;color:#8E8E93;outline:none;"/>
+                <span style="font-size:13px;color:#8E8E93;">mph</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #E5E5EA;">
+              <span style="font-size:15px;color:#000;">Duration</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input id="cycle-duration" type="tel" placeholder="e.g. 90"
+                  value="${ci.cycleDuration || ''}"
+                  style="width:60px;text-align:right;border:none;background:transparent;
+                  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                  font-size:15px;color:#8E8E93;outline:none;"/>
+                <span style="font-size:13px;color:#8E8E93;">mins</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
+              <span style="font-size:15px;color:#000;">Type</span>
+              <div style="display:flex;gap:8px;">
+                ${['Outdoor','Indoor'].map(t => `
+                  <button class="cycle-type-btn" data-ctype="${t}"
+                    style="padding:6px 14px;border-radius:8px;
+                    border:1.5px solid ${ci.cycleType === t ? '#FF9500' : '#E5E5EA'};
+                    background:${ci.cycleType === t ? 'rgba(255,149,0,0.08)' : 'transparent'};
+                    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                    font-size:13px;font-weight:${ci.cycleType === t ? '600' : '400'};
+                    color:${ci.cycleType === t ? '#FF9500' : '#000'};cursor:pointer;">
+                    ${t}
+                  </button>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    if (session.type === 'golf') {
+      const profile    = Store.getProfile();
+      const handicap   = ci.handicapSnapshot || profile.golfHandicap || null;
+      const golfTypes  = Array.isArray(ci.golfTypes) ? ci.golfTypes : [];
+      if (handicap) html += detailRow('Current Handicap', handicap);
+      html += `
+        <div style="margin-top:8px;">
+          <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Type</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="golf-type-selector">
+            ${['Range','Short Game','Full Round','Lesson'].map(t => `
+              <button class="session-type-btn" data-gtype="${t}"
+                style="padding:10px 8px;border-radius:10px;
+                border:1.5px solid ${golfTypes.includes(t) ? '#34C759' : '#E5E5EA'};
+                background:${golfTypes.includes(t) ? 'rgba(52,199,89,0.08)' : '#F9F9F9'};
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                font-size:13px;font-weight:${golfTypes.includes(t) ? '600' : '400'};
+                color:${golfTypes.includes(t) ? '#34C759' : '#000'};cursor:pointer;">
+                ${t}
+              </button>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    html += `
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Notes</div>
+        <textarea
+          id="session-notes-input"
+          placeholder="How did it go? Any notes..."
+          style="
+            width:100%;min-height:90px;padding:12px;
+            background:#F9F9F9;border:0.5px solid #E5E5EA;
+            border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+            font-size:15px;color:#000;resize:none;outline:none;
+            -webkit-appearance:none;box-sizing:border-box;
+          "
+        >${notes}</textarea>
+      </div>`;
+
     return html;
+  }
+
+  function saveSessionField(dateStr, field, value) {
+    const all   = Store.getAllCheckIns();
+    const entry = all[dateStr] || { date: dateStr };
+    entry[field] = value;
+    all[dateStr] = entry;
+    try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+  }
+
+  function saveNotes(dateStr) {
+    const input = document.getElementById('session-notes-input');
+    if (!input) return;
+    const all   = Store.getAllCheckIns();
+    const entry = all[dateStr] || { date: dateStr };
+    entry.sessionNotes = input.value;
+    all[dateStr] = entry;
+    try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
   }
 
   function detailRow(label, value) {
@@ -285,7 +475,7 @@ const TrainingPage = (() => {
       return map[session.subtype] || 'Hypertrophy';
     }
     if (session.type === 'bjj')   return 'Brazilian Jiu-Jitsu';
-    if (session.type === 'golf')  return 'Golf Training';
+    if (session.type === 'golf')  return 'Golf Practice';
     if (session.type === 'cycle') return 'Outdoor Cycle';
     if (session.type === 'rest')  return 'Rest Day';
     if (session.type === 'race')  return 'Race Week';
@@ -295,88 +485,15 @@ const TrainingPage = (() => {
   function sessionSub(session) {
     if (session.type === 'hypertrophy') return session.label || '';
     if (session.type === 'bjj')         return `${session.duration} min session`;
-    if (session.type === 'golf')        return 'Range session';
+    if (session.type === 'golf')        return 'Range';
     if (session.type === 'cycle')       return `${session.distance} mile ride`;
     if (session.type === 'race')        return 'Fri–Sun · ~130 miles/day';
-    return '';
-  }
-
-  function sessionIcon(type) {
     return '';
   }
 
   function sessionBadge(type) {
     const map = { hypertrophy: 'GYM', bjj: 'BJJ', golf: 'GOLF', cycle: 'RIDE', rest: 'REST', race: 'RACE' };
     return map[type] || 'REST';
-  }
-
-  // ─── Build accordion body HTML ────────────────────────────
-
-  function buildBody(dateStr, session, completed) {
-    const today    = todayStr();
-    const isFuture = dateStr > today;
-
-    if (session.type === 'rest' || session.type === 'none') {
-      return `<div class="rest-body">Rest up and recover.</div>`;
-    }
-
-    if (session.type === 'race') {
-      return `<div class="rest-body">Cycling event — Fri to Sun, ~130 miles per day.</div>`;
-    }
-
-    let html = '';
-
-    // Volume badge + exercises for hypertrophy
-    if (session.type === 'hypertrophy') {
-      const checkin   = Store.getCheckIn(dateStr);
-      const vol       = checkin ? checkin.rag : null;
-      const exercises = vol
-        ? session.exercises
-        : TrainingData.getHypertrophySession(session.subtype, 'green').exercises;
-
-      if (vol) {
-        const labels = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
-        html += `<div class="volume-badge ${vol}">${labels[vol]}</div>`;
-      }
-
-      html += `<div class="exercise-card">
-        ${exercises.map(e => `
-          <div class="exercise-row">
-            <span class="exercise-name">${e.name}</span>
-            <span class="exercise-sets">${e.sets} sets</span>
-          </div>`).join('')}
-      </div>`;
-    }
-
-    // Non-hypertrophy detail
-    if (session.type === 'bjj') {
-      html += `<div class="exercise-card">
-        <div class="exercise-row">
-          <span class="exercise-name">Duration</span>
-          <span class="exercise-sets">${session.duration} mins</span>
-        </div>
-      </div>`;
-    }
-
-    if (session.type === 'cycle') {
-      html += `<div class="exercise-card">
-        <div class="exercise-row">
-          <span class="exercise-name">Target distance</span>
-          <span class="exercise-sets">${session.distance} miles</span>
-        </div>
-      </div>`;
-    }
-
-    if (session.type === 'golf') {
-      html += `<div class="exercise-card">
-        <div class="exercise-row">
-          <span class="exercise-name">Session type</span>
-          <span class="exercise-sets">Range</span>
-        </div>
-      </div>`;
-    }
-
-    return html;
   }
 
   // ─── Render ───────────────────────────────────────────────
@@ -413,18 +530,18 @@ const TrainingPage = (() => {
           <span class="week-nav-label" id="week-nav-label"></span>
           <button class="week-nav-btn" id="btn-week-next">›</button>
         </div>
-        <div class="accordion-list" id="accordion-list"></div>
+        <div class="accordion-list" id="accordion-list">
+          <div class="acc-group-card"></div>
+        </div>
       </div>`;
 
     document.getElementById('btn-week-prev')?.addEventListener('click', () => {
       weekOffset--;
-      openDate = null;
       renderList();
     });
 
     document.getElementById('btn-week-next')?.addEventListener('click', () => {
       weekOffset++;
-      openDate = null;
       renderList();
     });
 
@@ -432,21 +549,22 @@ const TrainingPage = (() => {
   }
 
   function renderList() {
-    const list  = document.getElementById('accordion-list');
-    const label = document.getElementById('week-nav-label');
+    const list    = document.getElementById('accordion-list');
+    const label   = document.getElementById('week-nav-label');
     const btnNext = document.getElementById('btn-week-next');
     if (!list) return;
 
-    const dates  = getWeekDates(weekOffset);
-    const today  = todayStr();
-    const days   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const dates = getWeekDates(weekOffset);
+    const today = todayStr();
+    const days  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
-    if (label) label.textContent = formatWeekLabel(dates);
-    if (btnNext) btnNext.disabled = false;
+    if (label)   label.textContent   = formatWeekLabel(dates);
+    if (btnNext) btnNext.disabled    = false;
 
-    // All closed by default — openDate stays null unless user taps
+    const groupCard = list.querySelector('.acc-group-card');
+    if (!groupCard) return;
 
-    list.innerHTML = dates.map((dateStr, i) => {
+    groupCard.innerHTML = dates.map((dateStr, i) => {
       const d         = parseLocalDate(dateStr);
       const session   = sessionForDate(dateStr);
       const completed = isCompleted(dateStr);
@@ -476,19 +594,16 @@ const TrainingPage = (() => {
         </div>`;
     }).join('');
 
-    // Row tap → modal
-    list.querySelectorAll('.acc-item').forEach(item => {
-      item.addEventListener('click', () => {
-        openSessionModal(item.dataset.date);
-      });
+    groupCard.querySelectorAll('.acc-item').forEach(item => {
+      item.addEventListener('click', () => openSessionModal(item.dataset.date));
     });
   }
 
   function init() {
     document.addEventListener('nav:change', e => {
+      closeSessionModal();
       if (e.detail.target === 'training') {
         weekOffset = 0;
-        openDate   = null;
         render();
       }
     });
