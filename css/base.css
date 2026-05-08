@@ -269,3 +269,97 @@ html, body {
 .page-bottom-pad {
   height: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg));
 }
+
+/* ─── iOS Alert Sheet ────────────────────────────────────── */
+
+#ios-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  padding: var(--space-lg);
+}
+
+#ios-alert-overlay.visible {
+  opacity: 1;
+}
+
+#ios-alert-box {
+  background: rgba(242,242,247,0.98);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 270px;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
+}
+
+#ios-alert-overlay.visible #ios-alert-box {
+  transform: scale(1);
+}
+
+#ios-alert-content {
+  padding: 20px 16px 16px;
+  text-align: center;
+}
+
+#ios-alert-title {
+  font-family: var(--font);
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 4px;
+}
+
+#ios-alert-message {
+  font-family: var(--font);
+  font-size: 13px;
+  color: #3C3C43;
+  line-height: 1.4;
+}
+
+#ios-alert-actions {
+  display: flex;
+  border-top: 0.5px solid rgba(60,60,67,0.29);
+}
+
+#ios-alert-actions button {
+  flex: 1;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 17px;
+  color: #007AFF;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background 100ms ease;
+}
+
+#ios-alert-actions button:active {
+  background: rgba(0,0,0,0.08);
+}
+
+#ios-alert-actions button + button {
+  border-left: 0.5px solid rgba(60,60,67,0.29);
+}
+
+#ios-alert-actions button#ios-alert-confirm {
+  font-weight: 600;
+}
+
+#ios-alert-actions button#ios-alert-confirm.destructive {
+  color: #FF3B30;
+}
+
+#ios-alert-actions button#ios-alert-cancel {
+  font-weight: 400;
+}
