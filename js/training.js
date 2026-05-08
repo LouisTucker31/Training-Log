@@ -61,12 +61,210 @@ const TrainingPage = (() => {
   }
 
   function toggleComplete(dateStr) {
-    const all     = Store.getAllCheckIns();
-    const entry   = all[dateStr] || { date: dateStr };
+    const all   = Store.getAllCheckIns();
+    const entry = all[dateStr] || { date: dateStr };
     entry.completed = !entry.completed;
-    all[dateStr]  = entry;
+    all[dateStr] = entry;
     try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
     renderList();
+    if (typeof HomePage !== 'undefined') HomePage.render();
+    // Update modal button if still open
+    updateModalButton(dateStr);
+  }
+
+  function updateModalButton(dateStr) {
+    const btn = document.getElementById('session-modal-complete-btn');
+    if (!btn || btn.dataset.date !== dateStr) return;
+    const completed = isCompleted(dateStr);
+    btn.textContent  = completed ? 'Completed ✓' : 'Mark as Complete';
+    btn.dataset.completed = completed ? 'true' : 'false';
+    btn.style.background  = completed ? '#AEAEB2' : '#007AFF';
+  }
+
+  // ─── Session Modal ────────────────────────────────────────
+
+  function openSessionModal(dateStr) {
+    const existing = document.getElementById('session-modal-backdrop');
+    if (existing) existing.remove();
+
+    const profile   = Store.getProfile();
+    const ci        = Store.getCheckIn(dateStr);
+    const rag       = ci?.rag || 'green';
+    const session   = TrainingData.getSessionForDate(dateStr, profile.programmeStart, rag);
+    const completed = isCompleted(dateStr);
+    const isFuture  = dateStr > todayStr();
+
+    const title    = sessionTitle(session);
+    const bodyHTML = buildModalBody(session);
+    const btnText  = completed ? 'Completed ✓' : 'Mark as Complete';
+    const btnBg    = completed ? '#AEAEB2' : '#007AFF';
+
+    const d     = parseLocalDate(dateStr);
+    const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    const backdrop = document.createElement('div');
+    backdrop.id    = 'session-modal-backdrop';
+    backdrop.style.cssText = `
+      position:absolute;inset:0;z-index:200;
+      background:rgba(0,0,0,0.4);
+      display:flex;align-items:flex-end;
+    `;
+
+    backdrop.innerHTML = `
+      <div id="session-modal" style="
+        background:#FFFFFF;
+        border-radius:20px 20px 0 0;
+        width:100%;
+        height:90%;
+        display:flex;
+        flex-direction:column;
+        transform:translateY(100%);
+        transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);
+        will-change:transform;
+      ">
+        <div style="width:36px;height:4px;background:#E5E5EA;border-radius:2px;margin:12px auto 0;flex-shrink:0;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;">
+          <div>
+            <div style="font-size:17px;font-weight:700;color:#000;">${title}</div>
+            <div style="font-size:13px;color:#8E8E93;margin-top:2px;">${label}</div>
+          </div>
+          <button id="session-modal-close" style="
+            background:rgba(142,142,147,0.12);border:none;border-radius:50%;
+            width:30px;height:30px;font-size:16px;color:#8E8E93;
+            display:flex;align-items:center;justify-content:center;cursor:pointer;
+          ">✕</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 0;">
+          ${bodyHTML}
+          ${!isFuture ? `
+          <div style="padding:16px 0 100px;">
+            <button id="session-modal-complete-btn"
+              data-date="${dateStr}"
+              data-completed="${completed}"
+              style="
+                width:100%;min-height:52px;border:none;border-radius:12px;
+                background:${btnBg};color:#fff;
+                font-size:17px;font-weight:600;cursor:pointer;
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                transition:background 0.2s;
+              ">${btnText}</button>
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+
+    const container = document.getElementById('app') || document.body;
+    container.appendChild(backdrop);
+
+    // Animate in
+    setTimeout(() => {
+      document.getElementById('session-modal').style.transform = 'translateY(0)';
+    }, 20);
+    // Close handlers
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) closeSessionModal();
+    });
+    document.getElementById('session-modal-close').addEventListener('click', closeSessionModal);
+
+    // Complete button
+    const btn = document.getElementById('session-modal-complete-btn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const wasCompleted = isCompleted(dateStr);
+        toggleComplete(dateStr);
+        if (!wasCompleted) closeSessionModal();
+      });
+    }
+
+    // Drag to dismiss
+    const modal  = document.getElementById('session-modal');
+    const handle = modal.querySelector('div');
+    let startY = 0, dragging = false;
+
+    handle.addEventListener('touchstart', e => {
+      startY   = e.touches[0].clientY;
+      dragging = true;
+      modal.style.transition = 'none';
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const delta = Math.max(0, e.touches[0].clientY - startY);
+      modal.style.transform = `translateY(${delta * 0.6}px)`;
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+      if (!dragging) return;
+      dragging = false;
+      modal.style.transition = '';
+      const delta = e.changedTouches[0].clientY - startY;
+      if (delta > 100) closeSessionModal();
+      else modal.style.transform = 'translateY(0)';
+    });
+  }
+
+  function closeSessionModal() {
+    const backdrop = document.getElementById('session-modal-backdrop');
+    const modal    = document.getElementById('session-modal');
+    if (!backdrop) return;
+    if (modal) modal.style.transform = 'translateY(100%)';
+    setTimeout(() => backdrop.remove(), 520);
+  }
+
+  function buildModalBody(session) {
+    if (session.type === 'rest' || session.type === 'none') {
+      return `<p style="color:#8E8E93;font-size:15px;margin-top:8px;">Rest day — take it easy.</p>`;
+    }
+    if (session.type === 'race') {
+      return `<p style="color:#8E8E93;font-size:15px;margin-top:8px;">Cycling event — Fri to Sun, ~130 miles per day.</p>`;
+    }
+
+    let html = '';
+
+    if (session.type === 'hypertrophy') {
+      const ci  = null;
+      const vol = session.volume || 'green';
+      const labels = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
+      const colours = { green: '#30D158', amber: '#FF9F0A', red: '#FF453A' };
+      html += `
+        <div style="
+          display:inline-block;padding:4px 10px;border-radius:6px;margin:8px 0 12px;
+          background:rgba(${vol==='green'?'48,209,88':vol==='amber'?'255,159,10':'255,69,58'},0.12);
+          color:${colours[vol]};font-size:13px;font-weight:600;
+        ">${labels[vol]}</div>
+        <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;">
+          ${session.exercises.map((e, i) => `
+            <div style="
+              display:flex;justify-content:space-between;align-items:center;
+              padding:12px 16px;
+              ${i < session.exercises.length - 1 ? 'border-bottom:0.5px solid #E5E5EA;' : ''}
+            ">
+              <span style="font-size:15px;color:#000;">${e.name}</span>
+              <span style="font-size:15px;color:#8E8E93;font-weight:500;">${e.sets} sets</span>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    if (session.type === 'bjj') {
+      html += detailRow('Duration', `${session.duration} mins`);
+    }
+    if (session.type === 'cycle') {
+      html += detailRow('Target distance', `${session.distance} miles`);
+    }
+    if (session.type === 'golf') {
+      html += detailRow('Session type', session.focus || 'Range');
+    }
+
+    return html;
+  }
+
+  function detailRow(label, value) {
+    return `
+      <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:8px;
+                  display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:15px;color:#000;">${label}</span>
+        <span style="font-size:15px;color:#8E8E93;font-weight:500;">${value}</span>
+      </div>`;
   }
 
   function getWeekNumber(dateStr) {
@@ -105,6 +303,11 @@ const TrainingPage = (() => {
 
   function sessionIcon(type) {
     return '';
+  }
+
+  function sessionBadge(type) {
+    const map = { hypertrophy: 'GYM', bjj: 'BJJ', golf: 'GOLF', cycle: 'RIDE', rest: 'REST', race: 'RACE' };
+    return map[type] || 'REST';
   }
 
   // ─── Build accordion body HTML ────────────────────────────
@@ -248,18 +451,12 @@ const TrainingPage = (() => {
       const session   = sessionForDate(dateStr);
       const completed = isCompleted(dateStr);
       const isToday   = dateStr === today;
-      const isOpen    = dateStr === openDate;
-      const wn        = getWeekNumber(dateStr);
-      const weekTag   = wn ? `W${wn}` : '';
-
-      const isFuture = dateStr > today;
 
       const classes = [
         'acc-item',
         `type-${session.type || 'rest'}`,
-        isToday    ? 'is-today'     : '',
-        completed  ? 'is-completed' : '',
-        isOpen     ? 'is-open'      : '',
+        isToday   ? 'is-today'     : '',
+        completed ? 'is-completed' : '',
       ].filter(Boolean).join(' ');
 
       return `
@@ -269,44 +466,20 @@ const TrainingPage = (() => {
               <span class="acc-day-name">${days[i]}</span>
               <span class="acc-day-num">${d.getDate()}</span>
             </div>
-            <span class="acc-icon">${sessionIcon(session.type)}</span>
+            <span class="acc-type-badge type-${session.type}">${sessionBadge(session.type)}</span>
             <div class="acc-session-info">
               <div class="acc-session-title">${sessionTitle(session)}</div>
               <div class="acc-session-sub">${sessionSub(session)}</div>
             </div>
-            <div class="acc-right" style="display:flex;align-items:center;gap:8px;">
-              ${!isFuture ? `<div class="acc-tick ${completed ? 'ticked' : ''}" data-tick="${dateStr}">
-                <span class="acc-tick-check">✓</span>
-              </div>` : ''}
-              <span class="acc-chevron">›</span>
-            </div>
-          </div>
-          <div class="acc-body">
-            <div class="acc-body-inner">
-              ${buildBody(dateStr, session, completed)}
-            </div>
+            <span class="acc-chevron">${completed ? '<span class="acc-tick-done">✓</span>' : '›'}</span>
           </div>
         </div>`;
     }).join('');
 
-    // Tick buttons — bind first, use pointerdown to beat accordion
-    list.querySelectorAll('[data-tick]').forEach(tick => {
-      tick.addEventListener('pointerdown', e => {
-        e.stopPropagation();
-        e.preventDefault();
-        toggleComplete(tick.dataset.tick);
-      });
-    });
-
-    // Accordion toggle
-    list.querySelectorAll('.acc-header').forEach(header => {
-      header.addEventListener('click', e => {
-        // Don't toggle if the tick was tapped
-        if (e.target.closest('[data-tick]')) return;
-        const item    = header.closest('.acc-item');
-        const dateStr = item.dataset.date;
-        openDate = openDate === dateStr ? null : dateStr;
-        renderList();
+    // Row tap → modal
+    list.querySelectorAll('.acc-item').forEach(item => {
+      item.addEventListener('click', () => {
+        openSessionModal(item.dataset.date);
       });
     });
   }
@@ -322,7 +495,7 @@ const TrainingPage = (() => {
     render();
   }
 
-  return { init, render };
+  return { init, render, openSessionModal };
 
 })();
 

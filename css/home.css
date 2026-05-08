@@ -1,0 +1,256 @@
+/* ============================================================
+   home.css — Home page styles
+   ============================================================ */
+
+.home-page {
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ─── Header ──────────────────────────────────────────────── */
+
+.home-header {
+  width: 100%;
+  padding: 20px 0 12px;
+}
+
+.home-greeting {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.home-date {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  color: #8E8E93;
+  margin-top: 4px;
+}
+
+/* ─── Recovery Ring ───────────────────────────────────────── */
+
+.home-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 8px 0 24px;
+}me-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 8px 0 16px;
+}
+
+.home-ring-hint {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  color: #AEAEB2;
+  margin-top: 8px;
+}
+
+/* ─── Session Card ────────────────────────────────────────── */
+
+.home-session-card {
+  width: 100%;
+  background: #F9F9F9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+  margin-bottom: 24px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  active: opacity 0.7;
+  transition: opacity 0.15s;
+}
+
+.home-session-card:active {
+  opacity: 0.7;
+}
+
+.home-session-card.is-rest {
+  opacity: 0.6;
+}
+
+.home-session-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-session-badge {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.home-session-badge.type-hypertrophy { background: rgba(0,122,255,0.1);  color: #007AFF; }
+.home-session-badge.type-bjj         { background: rgba(255,59,48,0.1);  color: #FF3B30; }
+.home-session-badge.type-golf        { background: rgba(52,199,89,0.1);  color: #34C759; }
+.home-session-badge.type-cycle       { background: rgba(255,149,0,0.1);  color: #FF9500; }
+.home-session-badge.type-rest,
+.home-session-badge.type-none        { background: rgba(142,142,147,0.1); color: #8E8E93; }
+.home-session-badge.type-race        { background: rgba(255,159,10,0.1); color: #FF9F0A; }
+
+.home-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-session-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.home-session-detail {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  color: #8E8E93;
+}
+
+.home-session-chevron {
+  font-size: 20px;
+  color: #C7C7CC;
+  line-height: 1;
+}
+
+/* ─── Sparkline ───────────────────────────────────────────── */
+
+.home-sparkline-wrap {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.home-section-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #8E8E93;
+  margin-bottom: 10px;
+}
+
+/* ─── Stat Tiles ──────────────────────────────────────────── */
+
+.home-tiles-wrap {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.home-tile {
+  background: #F9F9F9;
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.home-streak-badge {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: rgba(255, 149, 0, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  gap: 6px;
+  align-self: flex-start;
+}
+
+.home-streak-fire {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.home-streak-num {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #FF9500;
+  line-height: 1;
+}
+
+.home-tile-sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  color: #AEAEB2;
+  font-weight: 500;
+}
+
+.home-tile-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.home-tile-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 12px;
+  color: #8E8E93;
+}
+
+/* ─── Programme Progress ──────────────────────────────────── */
+
+.home-progress-wrap {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.home-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.home-progress-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 12px;
+  color: #8E8E93;
+}
+
+.home-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #E5E5EA;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.home-progress-fill {
+  height: 100%;
+  background: #007AFF;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}

@@ -313,7 +313,7 @@ const LogModal = (() => {
         <div class="step-hint">Check your answers before calculating your score</div>
         <div class="summary-rows" id="summary-rows"></div>
         <div class="step-next-btn">
-          <button class="btn btn-primary" id="btn-submit" style="min-height:56px;font-size:var(--text-title3);">See Today's Training</button>
+          <button class="btn btn-primary" id="btn-submit" style="min-height:56px;font-size:var(--text-title3);">Done</button>
         </div>
         <div class="page-bottom-pad"></div>
       </div>`;
@@ -662,10 +662,6 @@ const LogModal = (() => {
       // Overwrites any existing check-in for today (covers both new and edit)
       Store.saveCheckIn(data);
       close();
-      setTimeout(() => {
-        Router.showPage('training');
-        NavBar.setActiveByTarget('training');
-      }, 450);
     });
   }
 
