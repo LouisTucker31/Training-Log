@@ -38,7 +38,7 @@ const Store = (() => {
   function getProfile() {
     return read(KEYS.PROFILE) || {
       name:           '',
-      rhrBaseline:    59.1,
+      rhrBaseline:    null,
       programmeStart: null,
       avatar:         '🏋️',
       age:            '',
@@ -84,6 +84,14 @@ const Store = (() => {
     return write(KEYS.CHECK_INS, all);
   }
 
+  function clearAllData() {
+    try {
+      localStorage.removeItem(KEYS.CHECK_INS);
+      localStorage.removeItem(KEYS.PROFILE);
+      return true;
+    } catch { return false; }
+  }
+
   // ─── Trend data (last N days) ─────────────────────────────
 
   function getRecentCheckIns(days = 30) {
@@ -113,6 +121,7 @@ const Store = (() => {
     saveCheckIn,
     deleteCheckIn,
     getRecentCheckIns,
+    clearAllData,
   };
 
 })();

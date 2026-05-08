@@ -245,6 +245,11 @@ const TrainingPage = (() => {
       });
     });
 
+    // BJJ duration auto-save
+    document.getElementById('bjj-duration')?.addEventListener('input', e => {
+      saveSessionField(dateStr, 'bjjDuration', parseFloat(e.target.value) || 60);
+    });
+
     // Cycle pace/duration auto-save
     document.getElementById('cycle-pace')?.addEventListener('input', e => {
       saveSessionField(dateStr, 'cyclePace', e.target.value);
@@ -347,7 +352,20 @@ const TrainingPage = (() => {
       const beltHTML = belt ? detailRow('Belt', `${belt}${stripes !== null && stripes !== '' ? ` · ${stripes} stripe${stripes == 1 ? '' : 's'}` : ''}`) : '';
       const bjjTypes = Array.isArray(ci.bjjTypes) ? ci.bjjTypes : [];
 
-      html += detailRow('Duration', `${session.duration} mins`);
+      const bjjDuration = ci.bjjDuration ?? session.duration ?? 60;
+      html += `
+        <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:15px;color:#000;">Duration</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="bjj-duration" type="number" inputmode="decimal"
+              placeholder="60"
+              value="${bjjDuration}"
+              style="width:50px;text-align:right;border:none;background:transparent;
+              font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+              font-size:15px;color:#8E8E93;outline:none;"/>
+            <span style="font-size:13px;color:#8E8E93;">mins</span>
+          </div>
+        </div>`;
       html += beltHTML;
       html += `
         <div style="margin-top:12px;">
@@ -562,7 +580,7 @@ const TrainingPage = (() => {
         <span class="week-summary-count">${item.count !== null ? `× ${item.count}` : item.display}</span>
       </div>`).join('');
 
-    return `<div class="week-summary-strip">${html}</div>`;
+    return `<div class="acc-group-card" style="margin-top:12px;"><div class="week-summary-strip">${html}</div></div>`;
   }
 
   // ─── Render ───────────────────────────────────────────────
@@ -662,7 +680,16 @@ const TrainingPage = (() => {
             <span class="acc-chevron">${completed ? '<span class="acc-tick-done">✓</span>' : '›'}</span>
           </div>
         </div>`;
-    }).join('') + summaryHTML;
+    }).join('');
+
+    const existing = list.querySelector('.week-summary-outer');
+    if (existing) existing.remove();
+    if (summaryHTML) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'week-summary-outer';
+      wrapper.innerHTML = summaryHTML;
+      list.appendChild(wrapper);
+    }
 
     groupCard.querySelectorAll('.acc-item').forEach(item => {
       item.addEventListener('click', () => openSessionModal(item.dataset.date));

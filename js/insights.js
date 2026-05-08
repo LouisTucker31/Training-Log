@@ -215,7 +215,15 @@ const InsightsPage = (() => {
   // ─── Section 3: Weekly Volume Bar Chart ───────────────────
 
   function buildVolumeChart(allCheckIns, programmeStart, filter) {
-    const WEEKS  = 6;
+    let WEEKS = 6;
+    if (programmeStart) {
+      const start    = new Date(programmeStart + 'T00:00:00');
+      const today    = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+      const weeksSoFar = Math.floor(diffDays / 7) + 1;
+      WEEKS = Math.min(18, Math.max(6, weeksSoFar));
+    }
     const W      = 340;
     const H      = 160;
     const padL   = 24;
@@ -266,12 +274,12 @@ const InsightsPage = (() => {
         { key: 'gym',   colour: '#007AFF', label: 'Gym'     },
         { key: 'bjj',   colour: '#FF3B30', label: 'BJJ'     },
         { key: 'golf',  colour: '#34C759', label: 'Golf'    },
-        { key: 'miles', colour: '#FF9F0A', label: 'Miles'   },
+        { key: 'miles', colour: '#FF9F0A', label: 'Cycle'   },
       ],
       hypertrophy:  [{ key: 'gym',   colour: '#007AFF', label: 'Gym sessions'  }],
       bjj:          [{ key: 'bjj',   colour: '#FF3B30', label: 'BJJ sessions'  }],
       golf:         [{ key: 'golf',  colour: '#34C759', label: 'Golf sessions' }],
-      cycle:        [{ key: 'miles', colour: '#FF9F0A', label: 'Miles cycled'  }],
+      cycle:        [{ key: 'miles', colour: '#FF9F0A', label: 'Cycle'  }],
     };
 
     const activeSeries = filterConfig[filter] || filterConfig.all;
@@ -471,7 +479,30 @@ const InsightsPage = (() => {
 
     const profile     = Store.getProfile();
     const allCheckIns = Store.getAllCheckIns();
-    const stats       = calcStats(allCheckIns, profile.programmeStart);
+
+    if (!profile.programme || !profile.programmeStart) {
+      page.innerHTML = `
+        <div class="insights-page">
+          <div class="insights-header">
+            <h1>Insights</h1>
+            <div class="insights-header-sub">Your training at a glance</div>
+          </div>
+          <div class="insights-body">
+            <div class="insights-empty" style="margin-top:var(--space-xl)">
+              <div class="insights-empty-icon">📊</div>
+              <div class="insights-empty-text">Select a programme and set a start date in Profile to unlock your insights.</div>
+              <button class="btn btn-primary" id="insights-go-profile" style="margin-top:var(--space-lg)">Go to Profile</button>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('insights-go-profile')?.addEventListener('click', () => {
+        Router.showPage('profile');
+        NavBar.setActiveByTarget('profile');
+      });
+      return;
+    }
+
+    const stats = calcStats(allCheckIns, profile.programmeStart);
 
     page.innerHTML = `
       <div class="insights-page">

@@ -126,26 +126,28 @@ const ProfilePage = (() => {
             </div>
             <div class="settings-row" id="row-height-imperial" style="${Units.isImperial() ? '' : 'display:none'}">
               <span class="settings-row-label">Height</span>
-              <input
-                class="settings-row-input settings-row-input--half"
-                id="input-height-ft"
-                type="number"
-                inputmode="decimal"
-                placeholder="5"
-                value="${Units.heightFromStorage(profile.height).primary}"
-                style="max-width:48px;"
-              />
-              <span class="settings-row-hint">ft</span>
-              <input
-                class="settings-row-input settings-row-input--half"
-                id="input-height-in"
-                type="number"
-                inputmode="decimal"
-                placeholder="11"
-                value="${Units.heightFromStorage(profile.height).secondary}"
-                style="max-width:48px;margin-left:8px;"
-              />
-              <span class="settings-row-hint">in</span>
+              <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+                <input
+                  class="settings-row-input"
+                  id="input-height-ft"
+                  type="number"
+                  inputmode="decimal"
+                  placeholder="5"
+                  value="${Units.heightFromStorage(profile.height).primary}"
+                  style="width:36px;min-height:unset;padding:0;text-align:right;"
+                />
+                <span class="settings-row-hint">ft</span>
+                <input
+                  class="settings-row-input"
+                  id="input-height-in"
+                  type="number"
+                  inputmode="decimal"
+                  placeholder="11"
+                  value="${Units.heightFromStorage(profile.height).secondary}"
+                  style="width:36px;min-height:unset;padding:0;text-align:right;margin-left:8px;"
+                />
+                <span class="settings-row-hint">in</span>
+              </div>
             </div>
             <div class="settings-row">
               <span class="settings-row-label">Weight</span>
@@ -163,7 +165,7 @@ const ProfilePage = (() => {
         </div>
 
         <!-- SPORTS -->
-        <div class="settings-group">
+        <div class="settings-group" ${!profile.programme ? 'style="display:none"' : ''}>
           <div class="settings-group-title">Sports</div>
           <div class="settings-card">
             <div class="settings-row">
@@ -233,7 +235,6 @@ const ProfilePage = (() => {
                 id="input-start-date"
                 type="date"
                 value="${profile.programmeStart || ''}"
-                style="text-align:right;direction:rtl;"
               />
             </div>
             <div class="settings-row">
@@ -243,7 +244,7 @@ const ProfilePage = (() => {
                 id="input-rhr-baseline"
                 type="number"
                 inputmode="decimal"
-                placeholder="59.1"
+                placeholder="Add your resting HR"
                 value="${profile.rhrBaseline || ''}"
               />
               <span class="settings-row-hint">bpm</span>
@@ -258,7 +259,7 @@ const ProfilePage = (() => {
           <div class="settings-group-title">Data</div>
           <div class="settings-card">
             <div class="settings-row" id="btn-clear-data">
-              <span class="settings-row-destructive">Clear All Check-in Data</span>
+              <span class="settings-row-destructive">Reset App & Clear All Data</span>
             </div>
           </div>
         </div>
@@ -277,7 +278,8 @@ const ProfilePage = (() => {
   function save() {
     const name        = document.getElementById('input-name')?.value.trim()        || '';
     const startDate   = document.getElementById('input-start-date')?.value         || null;
-    const rhrBaseline = parseFloat(document.getElementById('input-rhr-baseline')?.value) || 59.1;
+    const rhrBaselineRaw = parseFloat(document.getElementById('input-rhr-baseline')?.value);
+    const rhrBaseline    = isNaN(rhrBaselineRaw) ? null : rhrBaselineRaw;
     const age         = document.getElementById('input-age')?.value                || '';
     const gender      = document.getElementById('input-gender')?.value             || '';
     const heightCm    = document.getElementById('input-height-cm')?.value  || '';
@@ -374,12 +376,20 @@ const ProfilePage = (() => {
 
     // Clear data
     document.getElementById('btn-clear-data')?.addEventListener('click', () => {
-      if (confirm('Clear all check-in data? This cannot be undone.')) {
-        const all = Store.getAllCheckIns();
-        Object.keys(all).forEach(k => Store.deleteCheckIn(k));
-        LogModal.renderLogPage();
-        alert('All check-in data cleared.');
-      }
+      showAlert({
+        title:              'Reset App',
+        message:            'This will clear all check-in data and profile settings. This cannot be undone.',
+        confirmLabel:       'Reset',
+        confirmDestructive: true,
+        onConfirm: () => {
+          Store.clearAllData();
+          LogModal.renderLogPage();
+          HomePage.render();
+          Router.showPage('profile');
+          NavBar.setActiveByTarget('profile');
+          ProfilePage.render();
+        },
+      });
     });
   }
 

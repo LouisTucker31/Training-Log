@@ -229,19 +229,18 @@
 
 /* ─── Week Summary Strip ─────────────────────────────────── */
 .week-summary-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  padding: 12px var(--space-md);
-  border-top: 0.5px solid var(--separator-opaque);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: var(--space-md);
 }
 
 .week-summary-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  padding: 4px 0;
 }
 
 .week-summary-badge {
@@ -255,7 +254,8 @@
 }
 
 .week-summary-count {
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  color: var(--label-tertiary);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--label-primary);
+  letter-spacing: -0.5px;
 }

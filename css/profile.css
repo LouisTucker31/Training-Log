@@ -66,10 +66,10 @@
 }
 
 .settings-card {
-  background: var(--bg-card);
+  background: #F9F9F9;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
 }
 
 /* ─── Settings Row ───────────────────────────────────────── */
@@ -122,6 +122,8 @@
 
 .settings-row-input[type="date"] {
   color: var(--label-secondary);
+  text-align: right;
+  -webkit-text-align: right;
 }
 
 .settings-row-hint {
@@ -144,9 +146,9 @@
 }
 
 .profile-progress-card {
-  background: var(--bg-card);
+  background: #F9F9F9;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
   padding: var(--space-md);
 }
 
