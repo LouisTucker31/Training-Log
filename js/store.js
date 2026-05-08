@@ -49,6 +49,7 @@ const Store = (() => {
       bjjBelt:        '',
       bjjStripes:     '',
       golfHandicap:   '',
+      units:          'metric',
     };
   }
 

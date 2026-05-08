@@ -195,7 +195,7 @@ const InsightsPage = (() => {
     ];
     let legendHTML = '';
     legendItems.forEach((item, i) => {
-      const lx = i * 68;
+      const lx = i * 76;
       legendHTML += `
         <rect x="${lx}" y="0" width="12" height="12" rx="3" fill="${item.fill}"/>
         <text x="${lx + 16}" y="10"
@@ -356,8 +356,27 @@ const InsightsPage = (() => {
 
     const avgRecovery  = logged.length ? Math.round(logged.reduce((s, c) => s + c.score, 0) / logged.length) : 0;
     const bestRecovery = logged.length ? Math.max(...logged.map(c => c.score)) : 0;
+    const bestEntry    = logged.find(c => c.score === bestRecovery);
+    const bestRecoveryDate = bestEntry?.date
+      ? parseLocalDate(bestEntry.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '—';
 
     let totalSessions = 0, totalBJJSessions = 0, totalGolf = 0, totalGym = 0, totalMiles = 0;
+
+    // Count expected sessions from programme start up to today
+    let expectedSessions = 0;
+    if (programmeStart) {
+      const start   = new Date(programmeStart + 'T00:00:00');
+      const today   = new Date();
+      today.setHours(0, 0, 0, 0);
+      for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+        const y   = d.getFullYear();
+        const mo  = String(d.getMonth() + 1).padStart(2, '0');
+        const dy  = String(d.getDate()).padStart(2, '0');
+        const s   = TrainingData.getSessionForDate(`${y}-${mo}-${dy}`, programmeStart, 'green');
+        if (s.type !== 'rest' && s.type !== 'none') expectedSessions++;
+      }
+    }
 
     Object.entries(allCheckIns).forEach(([dateStr, ci]) => {
       if (!ci || !ci.completed) return;
@@ -385,17 +404,17 @@ const InsightsPage = (() => {
       lastDate = k;
     });
 
-    return { totalSessions, avgRecovery, bestRecovery, totalBJJSessions, totalGolf, totalGym, totalMiles, longestStreak: longest };
+    return { totalSessions, expectedSessions, avgRecovery, bestRecovery, bestRecoveryDate, totalBJJSessions, totalGolf, totalGym, totalMiles, longestStreak: longest };
   }
 
   function buildStatTiles(stats) {
     const tiles = [
-      { sub: 'Sessions',        value: stats.totalSessions,    label: 'completed'          },
-      { sub: 'Longest Streak',  value: stats.longestStreak,    label: 'consecutive days'   },
-      { sub: 'Avg Recovery',    value: `${stats.avgRecovery}%`, label: 'across programme'  },
-      { sub: 'Best Recovery',   value: `${stats.bestRecovery}%`, label: 'single day'       },
+      { sub: 'Sessions',        value: stats.totalSessions,    label: `of ${stats.expectedSessions}` },
+      { sub: 'Longest Streak',  value: stats.longestStreak,    label: 'check-ins'          },
+      { sub: 'Avg Readiness',   value: `${Math.round(stats.avgRecovery)}%`,  label: 'across programme' },
+      { sub: 'Best Readiness',  value: `${Math.round(stats.bestRecovery)}%`, label: stats.bestRecoveryDate || '—' },
       { sub: 'BJJ',             value: stats.totalBJJSessions,  label: 'sessions logged'   },
-      { sub: 'Cycling',         value: stats.totalMiles,         label: 'miles total'      },
+      { sub: 'Cycling',  value: Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934), label: `${Units.distanceUnit()} total` },
       { sub: 'Hypertrophy',     value: stats.totalGym,           label: 'sessions logged'  },
       { sub: 'Golf',            value: stats.totalGolf,          label: 'sessions logged'  },
     ];
@@ -464,9 +483,9 @@ const InsightsPage = (() => {
 
         <div class="insights-body">
 
-          <!-- Section 1: Recovery Trend -->
+          <!-- Section 1: Readiness Trend -->
           <div>
-            <div class="insights-section-label">Recovery Trend</div>
+            <div class="insights-section-label">Readiness Trend</div>
             <div class="insights-card">
               <div class="insights-filter-row">
                 ${[7, 14, 30].map(d => `
@@ -521,18 +540,10 @@ const InsightsPage = (() => {
     });
 
     // Volume filter buttons
-    page.querySelectorAll('.insights-filter-btn').forEach(btn => {
+    page.querySelectorAll('.insights-filter-btn[data-volume-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
         volumeFilter = btn.dataset.volumeFilter;
-        const card = document.getElementById('insights-volume-card');
-        if (card) card.innerHTML = buildVolumeChart(allCheckIns, profile.programmeStart, volumeFilter);
-        // Re-bind after inner re-render
-        card.querySelectorAll('.insights-filter-btn').forEach(b => {
-          b.addEventListener('click', () => {
-            volumeFilter = b.dataset.volumeFilter;
-            render();
-          });
-        });
+        render();
       });
     });
   }

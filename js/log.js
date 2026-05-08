@@ -118,6 +118,10 @@ const LogModal = (() => {
     const lbl  = document.querySelector('.modal-progress-label');
     if (fill) fill.style.width = `${pct}%`;
     if (lbl)  lbl.textContent  = `${currentStep + 1} of ${TOTAL_STEPS}`;
+
+    // Show/hide back button
+    const backBtn = document.getElementById('modal-back-btn');
+    if (backBtn) backBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
   }
 
   function showStep(index, direction = 1) {
@@ -150,7 +154,8 @@ const LogModal = (() => {
       <div id="log-modal">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <span class="modal-header-title">Morning Check-in</span>
+          <button class="modal-close-btn" id="modal-back-btn" style="visibility:hidden;">‹</button>
+          <span class="modal-header-title">Daily Readiness</span>
           <button class="modal-close-btn" id="log-modal-close">✕</button>
         </div>
         <div class="modal-progress">
@@ -215,7 +220,7 @@ const LogModal = (() => {
         <div class="step-question">Resting Heart Rate</div>
         <div class="step-hint">Your baseline is ${baseline} bpm</div>
         <div class="number-input-wrap">
-          <input class="native-input" id="input-rhr" type="tel" placeholder="e.g. 58" />
+          <input class="native-input" id="input-rhr" type="number" inputmode="decimal" placeholder="e.g. 58.4" />
           <div class="number-input-unit">bpm</div>
         </div>
         <div class="step-next-btn">
@@ -538,8 +543,10 @@ const LogModal = (() => {
   // ─── Event Binding ────────────────────────────────────────
 
   function bindEvents() {
-    // Close
-    document.getElementById('log-modal-close')?.addEventListener('click', close);
+    // Back
+    document.getElementById('modal-back-btn')?.addEventListener('click', () => {
+      if (currentStep > 0) showStep(currentStep - 1, -1);
+    });
 
     // Drag to dismiss
     const modal  = document.getElementById('log-modal');
@@ -659,9 +666,9 @@ const LogModal = (() => {
     document.getElementById('btn-submit')?.addEventListener('click', () => {
       const result = calculateScore(answers);
       const data   = { ...answers, ...result };
-      // Overwrites any existing check-in for today (covers both new and edit)
       Store.saveCheckIn(data);
-      close();
+      // Show result screen instead of closing
+      showResult(result);
     });
   }
 

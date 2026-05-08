@@ -74,6 +74,13 @@ const ProfilePage = (() => {
           <div class="settings-group-title">You</div>
           <div class="settings-card">
             <div class="settings-row">
+              <span class="settings-row-label">Units</span>
+              <select class="settings-row-select" id="input-units">
+                <option value="metric"   ${(profile.units || 'metric') === 'metric'   ? 'selected' : ''}>Metric (kg, cm, km)</option>
+                <option value="imperial" ${(profile.units || 'metric') === 'imperial' ? 'selected' : ''}>Imperial (lbs, ft, mi)</option>
+              </select>
+            </div>
+            <div class="settings-row">
               <span class="settings-row-label">Name</span>
               <input
                 class="settings-row-input"
@@ -105,27 +112,52 @@ const ProfilePage = (() => {
                 <option value="Other"  ${profile.gender === 'Other'  ? 'selected' : ''}>Other</option>
               </select>
             </div>
-            <div class="settings-row">
+            <div class="settings-row" id="row-height-metric" style="${Units.isImperial() ? 'display:none' : ''}">
               <span class="settings-row-label">Height</span>
               <input
                 class="settings-row-input"
-                id="input-height"
-                type="tel"
+                id="input-height-cm"
+                type="number"
+                inputmode="decimal"
                 placeholder="—"
-                value="${profile.height || ''}"
+                value="${Units.isImperial() ? '' : (profile.height || '')}"
               />
               <span class="settings-row-hint">cm</span>
+            </div>
+            <div class="settings-row" id="row-height-imperial" style="${Units.isImperial() ? '' : 'display:none'}">
+              <span class="settings-row-label">Height</span>
+              <input
+                class="settings-row-input settings-row-input--half"
+                id="input-height-ft"
+                type="number"
+                inputmode="decimal"
+                placeholder="5"
+                value="${Units.heightFromStorage(profile.height).primary}"
+                style="max-width:48px;"
+              />
+              <span class="settings-row-hint">ft</span>
+              <input
+                class="settings-row-input settings-row-input--half"
+                id="input-height-in"
+                type="number"
+                inputmode="decimal"
+                placeholder="11"
+                value="${Units.heightFromStorage(profile.height).secondary}"
+                style="max-width:48px;margin-left:8px;"
+              />
+              <span class="settings-row-hint">in</span>
             </div>
             <div class="settings-row">
               <span class="settings-row-label">Weight</span>
               <input
                 class="settings-row-input"
                 id="input-weight"
-                type="tel"
+                type="number"
+                inputmode="decimal"
                 placeholder="—"
-                value="${profile.weight || ''}"
+                value="${Units.weightFromStorage(profile.weight)}"
               />
-              <span class="settings-row-hint">kg</span>
+              <span class="settings-row-hint" id="hint-weight">${Units.weightUnit()}</span>
             </div>
           </div>
         </div>
@@ -157,7 +189,8 @@ const ProfilePage = (() => {
               <input
                 class="settings-row-input"
                 id="input-golf-handicap"
-                type="tel"
+                type="number"
+                inputmode="decimal"
                 placeholder="—"
                 value="${profile.golfHandicap || ''}"
               />
@@ -187,12 +220,20 @@ const ProfilePage = (() => {
           <div class="settings-group-title">Training</div>
           <div class="settings-card">
             <div class="settings-row">
-              <span class="settings-row-label">Programme Start</span>
+              <span class="settings-row-label">Programme</span>
+              <select class="settings-row-select" id="input-programme">
+                <option value="">— Select —</option>
+                <option value="custom-18w" ${(profile.programme || '') === 'custom-18w' ? 'selected' : ''}>18-Week Custom</option>
+              </select>
+            </div>
+            <div class="settings-row" id="row-start-date" style="${profile.programme ? '' : 'display:none;'}">
+              <span class="settings-row-label">Start Date</span>
               <input
                 class="settings-row-input"
                 id="input-start-date"
                 type="date"
                 value="${profile.programmeStart || ''}"
+                style="text-align:right;"
               />
             </div>
             <div class="settings-row">
@@ -200,7 +241,8 @@ const ProfilePage = (() => {
               <input
                 class="settings-row-input"
                 id="input-rhr-baseline"
-                type="tel"
+                type="number"
+                inputmode="decimal"
                 placeholder="59.1"
                 value="${profile.rhrBaseline || ''}"
               />
@@ -238,19 +280,28 @@ const ProfilePage = (() => {
     const rhrBaseline = parseFloat(document.getElementById('input-rhr-baseline')?.value) || 59.1;
     const age         = document.getElementById('input-age')?.value                || '';
     const gender      = document.getElementById('input-gender')?.value             || '';
-    const height      = document.getElementById('input-height')?.value             || '';
-    const weight      = document.getElementById('input-weight')?.value             || '';
+    const heightCm    = document.getElementById('input-height-cm')?.value  || '';
+    const heightFt    = document.getElementById('input-height-ft')?.value  || '';
+    const heightIn    = document.getElementById('input-height-in')?.value  || '';
+    const height      = Units.heightToStorage(
+                          Units.isImperial() ? heightFt : heightCm,
+                          heightIn
+                        );
+    const weightRaw   = document.getElementById('input-weight')?.value     || '';
+    const weight      = Units.weightToStorage(weightRaw);
+    const units       = document.getElementById('input-units')?.value      || 'metric';
     const goal         = document.getElementById('input-goal')?.value        || '';
     const bjjBelt      = document.getElementById('input-bjj-belt')?.value    || '';
     const bjjStripes   = document.getElementById('input-bjj-stripes')?.value || '';
     const golfHandicap = document.getElementById('input-golf-handicap')?.value || '';
 
-    const existing = Store.getProfile();
+    const programme = document.getElementById('input-programme')?.value || '';
+    const existing  = Store.getProfile();
     Store.saveProfile({
       ...existing,
       name, programmeStart: startDate, rhrBaseline,
-      age, gender, height, weight, goal,
-      bjjBelt, bjjStripes, golfHandicap,
+      age, gender, height, weight, goal, units,
+      bjjBelt, bjjStripes, golfHandicap, programme,
     });
 
     // Update header live
@@ -291,16 +342,31 @@ const ProfilePage = (() => {
     });
 
     // Save on every input change
+    document.getElementById('input-units')?.addEventListener('change', () => {
+      save();
+      render(); // re-renders height/weight fields in correct unit
+    });
     document.getElementById('input-name')?.addEventListener('input', save);
     document.getElementById('input-age')?.addEventListener('input', save);
     document.getElementById('input-gender')?.addEventListener('change', save);
-    document.getElementById('input-height')?.addEventListener('input', save);
+    document.getElementById('input-height-cm')?.addEventListener('input', save);
+    document.getElementById('input-height-ft')?.addEventListener('input', save);
+    document.getElementById('input-height-in')?.addEventListener('input', save);
     document.getElementById('input-weight')?.addEventListener('input', save);
     document.getElementById('input-goal')?.addEventListener('change', save);
     document.getElementById('input-bjj-belt')?.addEventListener('change', save);
     document.getElementById('input-bjj-stripes')?.addEventListener('change', save);
     document.getElementById('input-golf-handicap')?.addEventListener('input', save);
     document.getElementById('input-rhr-baseline')?.addEventListener('change', save);
+    // Show/hide start date row when programme is selected
+    document.getElementById('input-programme')?.addEventListener('change', () => {
+      const val     = document.getElementById('input-programme')?.value;
+      const dateRow = document.getElementById('row-start-date');
+      if (dateRow) dateRow.style.display = val ? '' : 'none';
+      save();
+      render();
+    });
+
     document.getElementById('input-start-date')?.addEventListener('change', () => {
       save();
       render();

@@ -15,7 +15,7 @@
 
 .home-header {
   width: 100%;
-  padding: 20px 0 12px;
+  padding: var(--space-lg) 0 var(--space-sm);
 }
 
 .home-greeting {

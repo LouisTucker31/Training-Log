@@ -8,7 +8,7 @@ const HomePage = (() => {
 
   function getGreeting(name) {
     const h = new Date().getHours();
-    const time = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    const time = h < 12 ? 'Good morning,' : h < 18 ? 'Good afternoon,' : 'Good evening,';
     return { time, name: name || '' };
   }
 
@@ -18,7 +18,7 @@ const HomePage = (() => {
     });
   }
 
-  // ─── Recovery Delta ───────────────────────────────────────
+  // ─── Readiness Delta ──────────────────────────────────────
 
   function getRecoveryDelta(allCheckIns) {
     const today     = new Date();
@@ -40,7 +40,7 @@ const HomePage = (() => {
     return delta;
   }
 
-  // ─── Recovery Ring ────────────────────────────────────────
+  // ─── Readiness Ring ───────────────────────────────────────
 
   function buildRing(checkin, delta) {
     if (!checkin) {
@@ -103,7 +103,7 @@ const HomePage = (() => {
     if (session.type === 'cycle')       return 'Cardiovascular';
     if (session.type === 'golf')        return 'Golf Practice';
     if (session.type === 'race')        return 'Cardiovascular';
-    return 'Rest & Recovery';
+    return 'Rest & Recover';
   }
 
   function buildSessionCard(session) {
@@ -305,7 +305,7 @@ const HomePage = (() => {
         { title: 'Week',    big: weekNum ? `${weekNum}` : '—',   small: 'of 18 weeks',                         streak: false },
       { title: 'Gym',     big: stats.gymDone,   small: `of ${stats.gymTotal} sessions`,  streak: false },
       { title: 'Sports',  big: stats.sportDone, small: `of ${stats.sportTotal} sessions`, streak: false },
-      { title: 'Cycling', big: stats.miles || '0',             small: stats.totalMiles ? `of ${stats.totalMiles} miles` : 'miles this week', streak: false },
+      { title: 'Cycling', big: Units.isImperial() ? (stats.miles || '0') : (stats.miles ? (stats.miles * 1.60934).toFixed(1) : '0'), small: stats.totalMiles ? `of ${Units.isImperial() ? stats.totalMiles : (stats.totalMiles * 1.60934).toFixed(1)} ${Units.distanceUnit()} planned` : `${Units.distanceUnit()} this week`, streak: false },
     ];
 
     return `

@@ -288,7 +288,7 @@ const TrainingPage = (() => {
           background:rgba(${vol==='green'?'48,209,88':vol==='amber'?'255,159,10':'255,69,58'},0.12);
           color:${colours[vol]};font-size:13px;font-weight:600;
         ">${labels[vol]}</div>
-        <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;">
+        <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);">
           ${session.exercises.map((e, i) => `
             <div style="
               display:flex;justify-content:space-between;align-items:center;
@@ -342,11 +342,11 @@ const TrainingPage = (() => {
     }
 
     if (session.type === 'cycle') {
-      html += detailRow('Target distance', `${session.distance} miles`);
+      html += detailRow('Target distance', Units.displayDistance(session.distance));
       html += `
         <div style="margin-top:12px;">
           <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Details</div>
-          <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;">
+          <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #E5E5EA;">
               <span style="font-size:15px;color:#000;">Target Pace</span>
               <div style="display:flex;align-items:center;gap:6px;">
@@ -419,8 +419,9 @@ const TrainingPage = (() => {
           placeholder="How did it go? Any notes..."
           style="
             width:100%;min-height:90px;padding:12px;
-            background:#F9F9F9;border:0.5px solid #E5E5EA;
+            background:#F9F9F9;border:none;
             border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+            box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);
             font-size:15px;color:#000;resize:none;outline:none;
             -webkit-appearance:none;box-sizing:border-box;
           "
@@ -450,7 +451,7 @@ const TrainingPage = (() => {
 
   function detailRow(label, value) {
     return `
-      <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:8px;
+      <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.05);
                   display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:15px;color:#000;">${label}</span>
         <span style="font-size:15px;color:#8E8E93;font-weight:500;">${value}</span>
@@ -584,7 +585,7 @@ const TrainingPage = (() => {
               <span class="acc-day-name">${days[i]}</span>
               <span class="acc-day-num">${d.getDate()}</span>
             </div>
-            <span class="acc-type-badge type-${session.type}">${sessionBadge(session.type)}</span>
+            <span class="acc-type-badge type-${session.type} ${weekOffset !== 0 ? 'is-muted' : ''}">${sessionBadge(session.type)}</span>
             <div class="acc-session-info">
               <div class="acc-session-title">${sessionTitle(session)}</div>
               <div class="acc-session-sub">${sessionSub(session)}</div>
