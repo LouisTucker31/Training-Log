@@ -437,7 +437,7 @@ const LogModal = (() => {
         <span class="modal-header-title">Daily Readiness</span>
         <button class="modal-close-btn" id="log-modal-close">✕</button>
       </div>
-      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-md)">
+      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:var(--space-md)">
         <div class="result-score-ring">
           ${buildScoreRing(checkin.score, checkin.rag)}
           ${checkin.autoRed ? `<div style="font-size:var(--text-footnote);color:var(--colour-red);text-align:center;margin-top:4px;">Auto Red: ${checkin.autoRed}</div>` : ''}

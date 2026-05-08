@@ -114,5 +114,21 @@
     });
   }
 </script>
+<script>
+  // Auto-capitalise all text inputs and textareas, including those injected dynamically
+  function applyAutocapitalize(root) {
+    root.querySelectorAll('input:not([type="number"]):not([type="email"]):not([type="url"]):not([type="password"]):not([type="date"]):not([type="tel"]), textarea').forEach(el => {
+      if (!el.hasAttribute('autocapitalize')) el.setAttribute('autocapitalize', 'sentences');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    applyAutocapitalize(document);
+    new MutationObserver(mutations => {
+      mutations.forEach(m => m.addedNodes.forEach(n => {
+        if (n.nodeType === 1) applyAutocapitalize(n);
+      }));
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+</script>
 </body>
 </html>

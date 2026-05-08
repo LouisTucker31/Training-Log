@@ -83,7 +83,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
       display:flex;flex-direction:column;
       position:absolute;inset:0;
       background:var(--bg-modal,#fff);
-      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
       transform:translateX(${dir > 0 ? '100%' : '-100%'});
       transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
     `;

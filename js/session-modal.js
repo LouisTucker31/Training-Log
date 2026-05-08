@@ -511,7 +511,7 @@ function openSessionModal(dateStr) {
           <button class="modal-close-btn" id="session-modal-close">✕</button>
         </div>
       </div>
-      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 var(--space-md) 0;">
+      <div class="modal-scroll-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 var(--space-md) 0;overscroll-behavior:contain;">
         ${bodyHTML}
         ${!isFuture && session.type !== 'rest' ? `
         <div style="padding:var(--space-md) 0 100px;">

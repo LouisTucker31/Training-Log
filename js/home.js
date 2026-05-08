@@ -449,7 +449,7 @@ const HomePage = (() => {
     document.getElementById('home-session-card')?.addEventListener('click', () => {
       if (typeof TrainingPage !== 'undefined') {
         const today = Store.todayKey();
-        TrainingPage.openSessionModal(today);
+        openSessionModal(today);
       }
     });
   }
