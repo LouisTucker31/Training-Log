@@ -234,7 +234,8 @@ const ProfilePage = (() => {
                 class="settings-row-input"
                 id="input-start-date"
                 type="date"
-                value="${profile.programmeStart || ''}"
+                value="${profile.programme ? ((profile.programmeDates || {})[profile.programme] || '') : ''}"
+                style="text-align:right;"
               />
             </div>
             <div class="settings-row">
@@ -297,13 +298,23 @@ const ProfilePage = (() => {
     const bjjStripes   = document.getElementById('input-bjj-stripes')?.value || '';
     const golfHandicap = document.getElementById('input-golf-handicap')?.value || '';
 
-    const programme = document.getElementById('input-programme')?.value || '';
-    const existing  = Store.getProfile();
+    const programme     = document.getElementById('input-programme')?.value || '';
+    const existing      = Store.getProfile();
+    const programmeDates = { ...(existing.programmeDates || {}) };
+
+    // Save the start date against this programme ID
+    if (programme && startDate) {
+      programmeDates[programme] = startDate;
+    }
+
+    // Resolved start date for active programme
+    const resolvedStart = programme ? (programmeDates[programme] || null) : null;
+
     Store.saveProfile({
       ...existing,
-      name, programmeStart: startDate, rhrBaseline,
+      name, programmeStart: resolvedStart, rhrBaseline,
       age, gender, height, weight, goal, units,
-      bjjBelt, bjjStripes, golfHandicap, programme,
+      bjjBelt, bjjStripes, golfHandicap, programme, programmeDates,
     });
 
     // Update header live
@@ -365,6 +376,15 @@ const ProfilePage = (() => {
       const val     = document.getElementById('input-programme')?.value;
       const dateRow = document.getElementById('row-start-date');
       if (dateRow) dateRow.style.display = val ? '' : 'none';
+
+      // Restore saved start date for this programme if it exists
+      if (val) {
+        const existing = Store.getProfile();
+        const saved    = (existing.programmeDates || {})[val] || '';
+        const input    = document.getElementById('input-start-date');
+        if (input) input.value = saved;
+      }
+
       save();
       render();
     });

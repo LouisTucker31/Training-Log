@@ -595,12 +595,17 @@ const TrainingPage = (() => {
       page.innerHTML = `
         <div class="training-page">
           <div class="training-header"><h1>Training</h1></div>
-          <div class="no-programme-card">
-            <div class="no-programme-icon">📅</div>
-            <div class="no-programme-title">No programme set</div>
-            <div class="no-programme-sub">Go to Profile and set your programme start date.</div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-xl) var(--space-lg);text-align:center;margin-top:40px;">
+            <div style="font-size:48px;margin-bottom:var(--space-md);">🗓️</div>
+            <div style="font-size:20px;font-weight:700;color:#000;margin-bottom:var(--space-sm);">No programme set</div>
+            <div style="font-size:15px;color:#8E8E93;line-height:1.5;margin-bottom:var(--space-lg);">Select a programme and set a start date in Profile to see your training schedule.</div>
+            <button class="btn btn-primary" id="training-go-profile">Go to Profile</button>
           </div>
         </div>`;
+      document.getElementById('training-go-profile')?.addEventListener('click', () => {
+        Router.showPage('profile');
+        NavBar.setActiveByTarget('profile');
+      });
       return;
     }
 

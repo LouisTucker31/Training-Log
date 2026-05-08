@@ -198,8 +198,8 @@
 }
 
 .insights-empty-icon {
-  font-size: 36px;
-  margin-bottom: var(--space-sm);
+  font-size: 48px;
+  margin-bottom: var(--space-md);
 }
 
 .insights-empty-text {

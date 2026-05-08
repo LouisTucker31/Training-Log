@@ -40,6 +40,7 @@ const Store = (() => {
       name:           '',
       rhrBaseline:    null,
       programmeStart: null,
+      programmeDates: {},
       avatar:         '🏋️',
       age:            '',
       gender:         '',
