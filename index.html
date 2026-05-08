@@ -14,13 +14,11 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/navbar.css" />
-<script src="js/home.js"></script>
 <link rel="stylesheet" href="css/log.css" />
 <link rel="stylesheet" href="css/home.css" />
 <link rel="stylesheet" href="css/training.css" />
 <link rel="stylesheet" href="css/profile.css" />
 <link rel="stylesheet" href="css/insights.css" />
-<link rel="stylesheet" href="css/profile.css" />
 </head>
 <body>
 
@@ -61,14 +59,14 @@
           <span class="nav-label">Training</span>
         </button>
 
-        <button class="nav-item nav-item--log" data-target="log" aria-label="Log">
+        <button class="nav-item nav-item--log" data-target="log" aria-label="Today">
           <span class="nav-icon">
             <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="14" cy="14" r="10" stroke-width="1.7"/>
               <path d="M14 9v10M9 14h10" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </span>
-          <span class="nav-label">Log</span>
+          <span class="nav-label">Today</span>
         </button>
 
         <button class="nav-item" data-target="insights" aria-label="Insights">
@@ -97,18 +95,18 @@
   </div>
 
   <script src="js/navbar.js"></script>
-<script src="js/router.js"></script>
-<script src="js/data.js"></script>
-<script src="js/store.js"></script>
-<script src="js/alert.js"></script>
-<script src="js/units.js"></script>
-<script src="js/navbar.js"></script>
-<script src="js/home.js"></script>
-<script src="js/log.js"></script>
-<script src="js/training.js"></script>
-<script src="js/insights.js"></script>
-<script src="js/insights.js"></script>
-<script src="js/profile.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/alert.js"></script>
+  <script src="js/units.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/log.js"></script>
+  <script src="js/session-modal.js"></script>
+  <script src="js/workout-modal.js"></script>
+  <script src="js/training.js"></script>
+  <script src="js/insights.js"></script>
+  <script src="js/profile.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

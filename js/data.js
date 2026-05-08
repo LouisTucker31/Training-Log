@@ -85,14 +85,15 @@ const TrainingData = (() => {
     return new Date(y, m - 1, d);
   }
 
-  function getWeekNumber(programmeStart) {
+  function getWeekNumber(programmeStart, maxWeeks) {
     if (!programmeStart) return null;
     const start    = parseLocalDate(programmeStart);
     const today    = new Date();
     today.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     const week     = Math.floor(diffDays / 7) + 1;
-    return week > 0 && week <= 18 ? week : null;
+    const limit    = maxWeeks || 18;
+    return week > 0 && week <= limit ? week : null;
   }
 
   function getDayOfWeek(programmeStart) {
@@ -188,8 +189,25 @@ const TrainingData = (() => {
 
   // ─── Get session for any date ─────────────────────────────
 
-  function getSessionForDate(dateStr, programmeStart, ragScore) {
+  function getSessionForDate(dateStr, programmeStart, ragScore, programme, programmeLengthWeeks) {
     if (!programmeStart) return { type: 'none' };
+
+    // Smart programme — check store for custom workouts, otherwise rest
+    if (programme === 'smart') {
+      const start    = parseLocalDate(programmeStart);
+      const target   = parseLocalDate(dateStr);
+      const diffDays = Math.floor((target - start) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return { type: 'none' };
+      const week  = Math.floor(diffDays / 7) + 1;
+      const limit = programmeLengthWeeks || 52;
+      if (week > limit) return { type: 'none' };
+      if (typeof Store !== 'undefined') {
+        const smart = Store.getSmartWorkoutForDate(dateStr);
+        if (smart) return smartWorkoutToSession(smart);
+      }
+      return { type: 'rest', label: 'Rest Day' };
+    }
+
     const start    = parseLocalDate(programmeStart);
     const target   = parseLocalDate(dateStr);
     const diffDays = Math.floor((target - start) / (1000 * 60 * 60 * 24));
@@ -199,12 +217,24 @@ const TrainingData = (() => {
     if (week > 18) return { type: 'none' };
 
     const flag = WEEK_FLAGS[week];
-    const idx  = week - 1;
 
     if (flag === 'holiday') return { type: 'rest', label: 'Rest Day', note: 'Holiday week' };
     if (flag === 'race')    return { type: 'race',  label: 'Race Week' };
     if (flag === 'golfTour') return getGolfTourDay(day, ragScore);
     return getNormalDay(day, week, ragScore);
+  }
+
+  // ─── Smart workout → session object ──────────────────────
+
+  function smartWorkoutToSession(w) {
+    const base = { smart: true, smartId: w.id, name: w.name, tag: w.tag || '', subtitle: w.subtitle || '', recurrence: w.recurrence, recurrenceEveryDays: w.recurrenceEveryDays };
+    switch (w.sessionType) {
+      case 'gym':     return { ...base, type: 'smart-gym',    label: w.name || 'Gym', details: w.details || {} };
+      case 'sports':  return { ...base, type: 'smart-sports', label: w.name || 'Sports', details: w.details || {} };
+      case 'cardio':  return { ...base, type: 'smart-cardio', label: w.name || 'Cardio', details: w.details || {} };
+      case 'other':   return { ...base, type: 'smart-other',  label: w.name || 'Other', details: w.details || {} };
+      default:        return { ...base, type: 'rest', label: 'Rest Day' };
+    }
   }
 
   // ─── Public ───────────────────────────────────────────────

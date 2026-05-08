@@ -96,19 +96,27 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  padding: 4px 8px;
+  padding: 4px 6px;
   border-radius: 6px;
-  min-width: 44px;
+  width: 52px;
+  flex-shrink: 0;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.home-session-badge.type-hypertrophy { background: rgba(0,122,255,0.1);  color: #007AFF; }
-.home-session-badge.type-bjj         { background: rgba(255,59,48,0.1);  color: #FF3B30; }
-.home-session-badge.type-golf        { background: rgba(52,199,89,0.1);  color: #34C759; }
-.home-session-badge.type-cycle       { background: rgba(255,149,0,0.1);  color: #FF9500; }
+.home-session-badge.type-hypertrophy  { background: rgba(0,122,255,0.1);   color: #007AFF; }
+.home-session-badge.type-bjj          { background: rgba(255,59,48,0.1);   color: #FF3B30; }
+.home-session-badge.type-golf         { background: rgba(52,199,89,0.1);   color: #34C759; }
+.home-session-badge.type-cycle        { background: rgba(255,149,0,0.1);   color: #FF9500; }
 .home-session-badge.type-rest,
-.home-session-badge.type-none        { background: rgba(142,142,147,0.1); color: #8E8E93; }
-.home-session-badge.type-race        { background: rgba(255,159,10,0.1); color: #FF9F0A; }
+.home-session-badge.type-none         { background: rgba(142,142,147,0.1); color: #8E8E93; }
+.home-session-badge.type-race         { background: rgba(255,159,10,0.1);  color: #FF9F0A; }
+.home-session-badge.type-smart-gym    { background: rgba(0,122,255,0.1);   color: #007AFF; }
+.home-session-badge.type-smart-sports { background: rgba(255,59,48,0.1);   color: #FF3B30; }
+.home-session-badge.type-smart-cardio { background: rgba(255,149,0,0.1);   color: #FF9500; }
+.home-session-badge.type-smart-other  { background: rgba(142,142,147,0.1); color: #8E8E93; }
 
 .home-session-info {
   display: flex;

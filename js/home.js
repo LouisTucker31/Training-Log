@@ -43,7 +43,7 @@ const HomePage = (() => {
   // ─── Readiness Ring ───────────────────────────────────────
 
   function buildRing(checkin, delta) {
-    if (!checkin) {
+    if (!checkin || checkin.score === undefined || checkin.score === null) {
       return `
         <div class="home-ring-wrap">
           <svg width="160" height="160" viewBox="0 0 160 160">
@@ -52,7 +52,7 @@ const HomePage = (() => {
               font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
               font-size="15" fill="#AEAEB2">No check-in</text>
           </svg>
-          <div class="home-ring-hint">Tap Log below to check in</div>
+          <div class="home-ring-hint">Tap Today below to check in</div>
         </div>`;
     }
 
@@ -93,22 +93,31 @@ const HomePage = (() => {
   // ─── Today's Session Card ─────────────────────────────────
 
   function sessionBadgeLabel(session) {
-    const map = { hypertrophy: 'GYM', bjj: 'SPORT', golf: 'SPORT', cycle: 'RIDE', rest: 'REST', race: 'RIDE' };
+    if (session.tag) return session.tag.toUpperCase().slice(0, 7);
+    const map = {
+      hypertrophy: 'GYM', bjj: 'SPORT', golf: 'SPORT', cycle: 'RIDE', rest: 'REST', race: 'RIDE',
+      'smart-gym': 'GYM', 'smart-sports': 'SPORT', 'smart-cardio': 'CARDIO', 'smart-other': 'OTHER',
+    };
     return map[session.type] || 'REST';
   }
 
   function sessionDetail(session) {
-    if (session.type === 'hypertrophy') return 'Hypertrophy';
-    if (session.type === 'bjj')         return 'Martial Arts';
-    if (session.type === 'cycle')       return 'Cardiovascular';
-    if (session.type === 'golf')        return 'Golf Practice';
-    if (session.type === 'race')        return 'Cardiovascular';
+    if (session.subtitle) return session.subtitle;
+    if (session.type === 'hypertrophy')  return 'Hypertrophy';
+    if (session.type === 'bjj')          return 'Martial Arts';
+    if (session.type === 'cycle')        return 'Cardiovascular';
+    if (session.type === 'golf')         return 'Golf Practice';
+    if (session.type === 'race')         return 'Cardiovascular';
+    if (session.type === 'smart-gym')    return 'Gym';
+    if (session.type === 'smart-sports') return 'Sports';
+    if (session.type === 'smart-cardio') return 'Cardio';
+    if (session.type === 'smart-other')  return 'Other';
     return 'Rest & Recover';
   }
 
   function buildSessionCard(session) {
     const badge  = sessionBadgeLabel(session);
-    const title  = session.label || 'Rest Day';
+    const title  = session.name || session.label || 'Rest Day';
     const detail = sessionDetail(session);
     const isRest = session.type === 'rest' || session.type === 'none';
 
@@ -235,30 +244,31 @@ const HomePage = (() => {
 
   // ─── Programme Progress ───────────────────────────────────
 
-  function getProgrammeProgress(programmeStart) {
+  function getProgrammeProgress(programmeStart, maxWeeks) {
     if (!programmeStart) return null;
 
+    const weeks   = maxWeeks || 18;
     const start   = new Date(programmeStart);
     start.setHours(0, 0, 0, 0);
-    const total   = 18 * 7; // 126 days
+    const total   = weeks * 7;
     const today   = new Date();
     today.setHours(0, 0, 0, 0);
     const elapsed = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
     const day     = Math.max(1, Math.min(elapsed, total));
     const pct     = Math.round((day / total) * 100);
 
-    return { day, total, pct };
+    return { day, total, pct, weeks };
   }
 
-  function buildProgressBar(programmeStart) {
-    const prog = getProgrammeProgress(programmeStart);
+  function buildProgressBar(programmeStart, maxWeeks) {
+    const prog = getProgrammeProgress(programmeStart, maxWeeks);
     if (!prog) return '';
 
     return `
       <div class="home-progress-wrap">
         <div class="home-progress-header">
           <span class="home-section-title">Programme</span>
-          <span class="home-progress-label">Week ${Math.ceil(prog.day / 7)} of 18</span>
+          <span class="home-progress-label">Week ${Math.ceil(prog.day / 7)} of ${prog.weeks}</span>
         </div>
         <div class="home-progress-track">
           <div class="home-progress-fill" style="width:${prog.pct}%"></div>
@@ -274,48 +284,94 @@ const HomePage = (() => {
     return parseInt(parts[parts.length - 1]) || 0;
   }
 
-  function getWeekStats(allCheckIns, programmeStart) {
+  function getWeekStats(allCheckIns, programmeStart, programme, programmeLengthWeeks) {
     const dates = getCalendarWeekDates();
     let gymDone = 0, gymTotal = 0;
     let sportDone = 0, sportTotal = 0;
     let miles = 0, totalMiles = 0;
 
+    // Smart: per-type buckets keyed by sessionType
+    // Each entry: { tag, total, done, isCardio, distanceDone, distanceTotal }
+    const smartTypes = {};
+
     dates.forEach(dateStr => {
       const ci      = allCheckIns[dateStr];
-      const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci?.rag || 'green');
+      const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci?.rag || 'green', programme, programmeLengthWeeks);
 
-      // Planned totals
-      if (session.type === 'hypertrophy')                   gymTotal++;
+      if (programme === 'smart') {
+        if (!session.type.startsWith('smart-')) return;
+        const sType    = session.type.replace('smart-', '');
+        const tagKey   = session.tag ? session.tag.toLowerCase() : sType;
+        const display  = session.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
+        const isCardio = sType === 'cardio';
+        if (!smartTypes[tagKey]) smartTypes[tagKey] = { tag: display, total: 0, done: 0, isCardio, distanceDone: 0 };
+        smartTypes[tagKey].total++;
+        if (ci?.completed) {
+          smartTypes[tagKey].done++;
+          if (isCardio) smartTypes[tagKey].distanceDone += session.details?.distance || 0;
+        }
+        return;
+      }
+
+      // Standard programme — count totals regardless of completion
+      if (session.type === 'hypertrophy')                    gymTotal++;
       if (session.type === 'bjj' || session.type === 'golf') sportTotal++;
       if (session.type === 'cycle')                          totalMiles += session.distance || 0;
 
-      // Completed totals
-      if (!ci || !ci.completed) return;
-      if (session.type === 'hypertrophy')                   gymDone++;
+      if (!ci?.completed) return;
+      if (session.type === 'hypertrophy')                    gymDone++;
       if (session.type === 'bjj' || session.type === 'golf') sportDone++;
       if (session.type === 'cycle')                          miles += session.distance || 0;
     });
 
     const streak = getStreak(allCheckIns, programmeStart);
-    return { gymDone, gymTotal, sportDone, sportTotal, miles, totalMiles, streak };
+    return { gymDone, gymTotal, sportDone, sportTotal, miles, totalMiles, streak, smartTypes };
   }
 
-  function buildStatTiles(stats, weekNum) {
-    const tiles = [
-        { title: 'Week',    big: weekNum ? `${weekNum}` : '—',   small: 'of 18 weeks',                         streak: false },
-      { title: 'Gym',     big: stats.gymDone,   small: `of ${stats.gymTotal} sessions`,  streak: false },
-      { title: 'Sports',  big: stats.sportDone, small: `of ${stats.sportTotal} sessions`, streak: false },
-      { title: 'Cycling', big: Units.isImperial() ? (stats.miles || '0') : (stats.miles ? (stats.miles * 1.60934).toFixed(1) : '0'), small: stats.totalMiles ? `of ${Units.isImperial() ? stats.totalMiles : (stats.totalMiles * 1.60934).toFixed(1)} ${Units.distanceUnit()} planned` : `${Units.distanceUnit()} this week`, streak: false },
-    ];
+  function buildStatTiles(stats, weekNum, programme, maxWeeks) {
+    const weekTile = `
+      <div class="home-tile">
+        <div class="home-tile-sub">Week</div>
+        <div class="home-tile-value">${weekNum ? weekNum : '—'}</div>
+        <div class="home-tile-label">of ${maxWeeks || '—'} weeks</div>
+      </div>`;
+
+    if (programme === 'smart') {
+      const typeTiles = Object.values(stats.smartTypes).map(t => {
+        const big   = t.isCardio
+          ? (Units.isImperial() ? Math.round(t.distanceDone || 0) : Math.round((t.distanceDone || 0) * 1.60934))
+          : t.done;
+        const small = t.isCardio
+          ? `${Units.distanceUnit()} this week`
+          : `of ${t.total} sessions`;
+        return `
+          <div class="home-tile">
+            <div class="home-tile-sub">${t.tag}</div>
+            <div class="home-tile-value">${big}</div>
+            <div class="home-tile-label">${small}</div>
+          </div>`;
+      }).join('');
+      return `<div class="home-tiles-wrap">${weekTile}${typeTiles}</div>`;
+    }
 
     return `
       <div class="home-tiles-wrap">
-        ${tiles.map(t => `
-          <div class="home-tile ${t.streak ? 'home-tile--streak' : ''}">
-            <div class="home-tile-sub">${t.title}</div>
-            <div class="home-tile-value">${t.big}</div>
-            <div class="home-tile-label">${t.small}</div>
-          </div>`).join('')}
+        ${weekTile}
+        <div class="home-tile">
+          <div class="home-tile-sub">Gym</div>
+          <div class="home-tile-value">${stats.gymDone}</div>
+          <div class="home-tile-label">of ${stats.gymTotal} sessions</div>
+        </div>
+        <div class="home-tile">
+          <div class="home-tile-sub">Sports</div>
+          <div class="home-tile-value">${stats.sportDone}</div>
+          <div class="home-tile-label">of ${stats.sportTotal} sessions</div>
+        </div>
+        <div class="home-tile">
+          <div class="home-tile-sub">Cycling</div>
+          <div class="home-tile-value">${Units.isImperial() ? Math.round(stats.miles || 0) : Math.round((stats.miles || 0) * 1.60934)}</div>
+          <div class="home-tile-label">${stats.totalMiles ? `of ${Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934)} ${Units.distanceUnit()} planned` : `${Units.distanceUnit()} this week`}</div>
+        </div>
       </div>`;
   }
 
@@ -328,10 +384,13 @@ const HomePage = (() => {
     const profile    = Store.getProfile();
     const checkin    = Store.getTodayCheckIn();
     const allCI      = Store.getAllCheckIns();
-    const weekNum    = TrainingData.getWeekNumber(profile.programmeStart);
+    const isSmart    = profile.programme === 'smart';
+    const maxWeeks   = isSmart ? (profile.programmeLengthWeeks || 52) : 18;
+    const weekNum    = TrainingData.getWeekNumber(profile.programmeStart, maxWeeks);
     const rag        = checkin?.rag || 'green';
-    const session    = TrainingData.getTodaySession(profile.programmeStart, rag);
-    const stats      = getWeekStats(allCI, profile.programmeStart);
+    const todayStr   = Store.todayKey();
+    const session    = TrainingData.getSessionForDate(todayStr, profile.programmeStart, rag, profile.programme, profile.programmeLengthWeeks);
+    const stats      = getWeekStats(allCI, profile.programmeStart, profile.programme, profile.programmeLengthWeeks);
 
     if (!profile.programmeStart) {
       page.innerHTML = `
@@ -345,11 +404,11 @@ const HomePage = (() => {
             </div>
             <div class="home-date">${getDateString()}</div>
           </div>
-          <div class="home-no-programme">
-            <div class="home-no-programme-icon">📅</div>
-            <div class="home-no-programme-title">No programme set</div>
-            <div class="home-no-programme-sub">Go to Profile and set your programme start date to get started.</div>
-            <button class="btn btn-primary" id="home-go-profile" style="margin-top:24px;">Go to Profile</button>
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-title">No programme set</div>
+            <div class="empty-state-text">Set your programme start date in Profile to get started.</div>
+            <button class="btn btn-primary" id="home-go-profile">Go to Profile</button>
           </div>
         </div>`;
       document.getElementById('home-go-profile')?.addEventListener('click', () => {
@@ -379,8 +438,8 @@ const HomePage = (() => {
 
         ${buildRing(checkin, getRecoveryDelta(allCI))}
         ${buildSessionCard(session)}
-        ${buildProgressBar(profile.programmeStart)}
-        ${buildStatTiles(stats, weekNum)}
+        ${buildProgressBar(profile.programmeStart, isSmart ? maxWeeks : 18)}
+        ${buildStatTiles(stats, weekNum, profile.programme, maxWeeks)}
 
         <div class="page-bottom-pad"></div>
       </div>

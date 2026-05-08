@@ -365,6 +365,15 @@ const LogModal = (() => {
   // ─── Score Ring ───────────────────────────────────────────
 
   function buildScoreRing(score, rag) {
+    if (score == null) {
+      return `
+        <svg width="140" height="140" viewBox="0 0 140 140" style="display:block;">
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#E5E5EA" stroke-width="10"/>
+          <text x="70" y="76" text-anchor="middle"
+            font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
+            font-size="13" fill="#AEAEB2">No score</text>
+        </svg>`;
+    }
     const colour    = { green: '#30D158', amber: '#FF9F0A', red: '#FF453A' }[rag] || '#30D158';
     const colourDim = { green: 'rgba(48,209,88,0.3)', amber: 'rgba(255,159,10,0.3)', red: 'rgba(255,69,58,0.3)' }[rag];
     const radius    = 52;
@@ -399,13 +408,13 @@ const LogModal = (() => {
     if (!modal) return;
 
     const rows = [
-      { label: 'Sleep Score',    value: `${checkin.sleepScore}%`,    metric: 'sleepScore',    val: checkin.sleepScore },
-      { label: 'Recovery Score', value: `${checkin.recoveryScore}%`, metric: 'recoveryScore', val: checkin.recoveryScore },
-      { label: 'Resting HR',     value: `${checkin.rhr} bpm`,        metric: 'rhr',           val: checkin.rhr },
-      { label: 'Motivation',     value: cap(checkin.motivation),     metric: 'motivation',    val: checkin.motivation },
-      { label: 'Energy',         value: `${checkin.energy} / 10`,    metric: 'energy',        val: checkin.energy },
-      { label: 'Soreness',       value: cap(checkin.soreness),       metric: 'soreness',      val: checkin.soreness },
-      { label: 'Joint Pain',     value: `${checkin.jointPain} / 10`, metric: 'jointPain',     val: checkin.jointPain },
+      { label: 'Sleep Score',    value: checkin.sleepScore    != null ? `${checkin.sleepScore}%`    : '—', metric: 'sleepScore',    val: checkin.sleepScore },
+      { label: 'Recovery Score', value: checkin.recoveryScore != null ? `${checkin.recoveryScore}%` : '—', metric: 'recoveryScore', val: checkin.recoveryScore },
+      { label: 'Resting HR',     value: checkin.rhr           != null ? `${checkin.rhr} bpm`        : '—', metric: 'rhr',           val: checkin.rhr },
+      { label: 'Motivation',     value: checkin.motivation    != null ? cap(checkin.motivation)     : '—', metric: 'motivation',    val: checkin.motivation },
+      { label: 'Energy',         value: checkin.energy        != null ? `${checkin.energy} / 10`    : '—', metric: 'energy',        val: checkin.energy },
+      { label: 'Soreness',       value: checkin.soreness      != null ? cap(checkin.soreness)       : '—', metric: 'soreness',      val: checkin.soreness },
+      { label: 'Joint Pain',     value: checkin.jointPain     != null ? `${checkin.jointPain} / 10` : '—', metric: 'jointPain',     val: checkin.jointPain },
     ];
 
     if (checkin.illness) {
@@ -517,7 +526,7 @@ const LogModal = (() => {
         <div class="log-empty-state">
           <div class="log-empty-icon">🌅</div>
           <div class="log-empty-title">No check-in yet</div>
-          <div class="log-empty-subtitle">Tap Log below to start your morning check-in.</div>
+          <div class="log-empty-subtitle">Tap Today below to start your morning check-in.</div>
         </div>`;
       return;
     }

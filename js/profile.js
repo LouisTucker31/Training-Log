@@ -6,7 +6,7 @@ const ProfilePage = (() => {
 
   const AVATAR_OPTIONS = ['🏋️','🧑‍💻','🏃','🚴','🥋','⛳','🏊','🤸','💪','🧘'];
 
-  function getWeekInfo(programmeStart) {
+  function getWeekInfo(programmeStart, maxWeeks) {
     if (!programmeStart) return null;
     const start = new Date(programmeStart);
     const today = new Date();
@@ -14,7 +14,8 @@ const ProfilePage = (() => {
     today.setHours(0, 0, 0, 0);
     const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     if (diff < 0) return null;
-    const week = Math.min(Math.floor(diff / 7) + 1, 18);
+    const limit = maxWeeks || 18;
+    const week = Math.min(Math.floor(diff / 7) + 1, limit);
     const day  = (diff % 7) + 1;
     return { week, day };
   }
@@ -23,20 +24,24 @@ const ProfilePage = (() => {
     const page    = document.getElementById('page-profile');
     if (!page) return;
     const profile = Store.getProfile();
-    const info    = getWeekInfo(profile.programmeStart);
+    const isSmart  = profile.programme === 'smart';
+    const maxWeeks = isSmart ? (profile.programmeLengthWeeks || null) : 18;
+    const info    = getWeekInfo(profile.programmeStart, maxWeeks);
+    const weekLabel = maxWeeks ? `Week ${info?.week} of ${maxWeeks}` : `Week ${info?.week}`;
 
     const weekBadge = info
-      ? `<div class="profile-week-badge">Week ${info.week} of 18</div>`
+      ? `<div class="profile-week-badge">${weekLabel}</div>`
       : `<div class="profile-week-badge" style="background:var(--fill-tertiary);color:var(--label-tertiary)">No programme set</div>`;
 
-    const progressPct = info ? Math.round((info.week / 18) * 100) : 0;
-    const progressBar = info ? `
+    const progressPct = info && maxWeeks ? Math.round((info.week / maxWeeks) * 100) : 0;
+    const programmeName = isSmart ? 'Smart Programming' : 'Custom Programme';
+    const progressBar = info && maxWeeks ? `
       <div class="profile-progress-section">
         <div class="settings-group-title">Progress</div>
         <div class="profile-progress-card">
           <div class="profile-progress-header">
-            <span class="profile-progress-title">Custom Programme</span>
-            <span class="profile-progress-label">Week ${info.week} of 18</span>
+            <span class="profile-progress-title">${programmeName}</span>
+            <span class="profile-progress-label">${weekLabel}</span>
           </div>
           <div class="profile-progress-track">
             <div class="profile-progress-fill" style="width:${progressPct}%"></div>
@@ -164,8 +169,8 @@ const ProfilePage = (() => {
           </div>
         </div>
 
-        <!-- SPORTS -->
-        <div class="settings-group" ${!profile.programme ? 'style="display:none"' : ''}>
+        <!-- SPORTS — hidden for smart programme -->
+        <div class="settings-group" ${(!profile.programme || profile.programme === 'smart') ? 'style="display:none"' : ''}>
           <div class="settings-group-title">Sports</div>
           <div class="settings-card">
             <div class="settings-row">
@@ -226,7 +231,21 @@ const ProfilePage = (() => {
               <select class="settings-row-select" id="input-programme">
                 <option value="">— Select —</option>
                 <option value="custom-18w" ${(profile.programme || '') === 'custom-18w' ? 'selected' : ''}>18-Week Custom</option>
+                <option value="smart"      ${(profile.programme || '') === 'smart'      ? 'selected' : ''}>Smart Programming</option>
               </select>
+            </div>
+            <div class="settings-row" id="row-programme-length" style="${profile.programme === 'smart' ? '' : 'display:none;'}">
+              <span class="settings-row-label">Length</span>
+              <input
+                class="settings-row-input"
+                id="input-programme-length"
+                type="number"
+                inputmode="numeric"
+                placeholder="e.g. 12"
+                value="${profile.programmeLengthWeeks || ''}"
+                style="text-align:right;"
+              />
+              <span class="settings-row-hint">weeks</span>
             </div>
             <div class="settings-row" id="row-start-date" style="${profile.programme ? '' : 'display:none;'}">
               <span class="settings-row-label">Start Date</span>
@@ -299,6 +318,8 @@ const ProfilePage = (() => {
     const golfHandicap = document.getElementById('input-golf-handicap')?.value || '';
 
     const programme     = document.getElementById('input-programme')?.value || '';
+    const programmeLengthRaw = parseInt(document.getElementById('input-programme-length')?.value);
+    const programmeLengthWeeks = programme === 'smart' && !isNaN(programmeLengthRaw) ? programmeLengthRaw : null;
     const existing      = Store.getProfile();
     const programmeDates = { ...(existing.programmeDates || {}) };
 
@@ -315,6 +336,7 @@ const ProfilePage = (() => {
       name, programmeStart: resolvedStart, rhrBaseline,
       age, gender, height, weight, goal, units,
       bjjBelt, bjjStripes, golfHandicap, programme, programmeDates,
+      programmeLengthWeeks,
     });
 
     // Update header live
@@ -324,12 +346,14 @@ const ProfilePage = (() => {
       nameDisplay.classList.toggle('placeholder', !name);
     }
 
-    const info  = getWeekInfo(startDate);
+    const savedProfile = Store.getProfile();
+    const mw   = savedProfile.programme === 'smart' ? (savedProfile.programmeLengthWeeks || null) : 18;
+    const info = getWeekInfo(startDate, mw);
     const badge = document.querySelector('.profile-week-badge');
     if (badge && info) {
-      badge.textContent        = `Week ${info.week} of 18`;
-      badge.style.background   = 'rgba(0, 122, 255, 0.10)';
-      badge.style.color        = 'var(--colour-blue)';
+      badge.textContent      = mw ? `Week ${info.week} of ${mw}` : `Week ${info.week}`;
+      badge.style.background = 'rgba(0, 122, 255, 0.10)';
+      badge.style.color      = 'var(--colour-blue)';
     }
   }
 
@@ -371,11 +395,16 @@ const ProfilePage = (() => {
     document.getElementById('input-bjj-stripes')?.addEventListener('change', save);
     document.getElementById('input-golf-handicap')?.addEventListener('input', save);
     document.getElementById('input-rhr-baseline')?.addEventListener('change', save);
-    // Show/hide start date row when programme is selected
+    // Show/hide rows when programme changes
     document.getElementById('input-programme')?.addEventListener('change', () => {
-      const val     = document.getElementById('input-programme')?.value;
-      const dateRow = document.getElementById('row-start-date');
-      if (dateRow) dateRow.style.display = val ? '' : 'none';
+      const val        = document.getElementById('input-programme')?.value;
+      const dateRow    = document.getElementById('row-start-date');
+      const lengthRow  = document.getElementById('row-programme-length');
+      const sportsGroup = document.querySelector('.settings-group:has(#input-bjj-belt)');
+
+      if (dateRow)   dateRow.style.display   = val ? '' : 'none';
+      if (lengthRow) lengthRow.style.display = val === 'smart' ? '' : 'none';
+      if (sportsGroup) sportsGroup.style.display = (!val || val === 'smart') ? 'none' : '';
 
       // Restore saved start date for this programme if it exists
       if (val) {
@@ -389,6 +418,7 @@ const ProfilePage = (() => {
       render();
     });
 
+    document.getElementById('input-programme-length')?.addEventListener('input', save);
     document.getElementById('input-start-date')?.addEventListener('change', () => {
       save();
       render();

@@ -214,7 +214,9 @@ const InsightsPage = (() => {
 
   // ─── Section 3: Weekly Volume Bar Chart ───────────────────
 
-  function buildVolumeChart(allCheckIns, programmeStart, filter) {
+  function buildVolumeChart(allCheckIns, programmeStart, filter, programme, programmeLengthWeeks) {
+    const isSmart = programme === 'smart';
+    const maxWeeks = isSmart ? (programmeLengthWeeks || 52) : 18;
     let WEEKS = 6;
     if (programmeStart) {
       const start    = new Date(programmeStart + 'T00:00:00');
@@ -222,7 +224,7 @@ const InsightsPage = (() => {
       today.setHours(0, 0, 0, 0);
       const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
       const weeksSoFar = Math.floor(diffDays / 7) + 1;
-      WEEKS = Math.min(18, Math.max(6, weeksSoFar));
+      WEEKS = Math.min(maxWeeks, Math.max(6, weeksSoFar));
     }
     const W      = 340;
     const H      = 160;
@@ -254,35 +256,71 @@ const InsightsPage = (() => {
       weeks.push(dates);
     }
 
+    // For smart: discover all tag types present across all data
+    const SMART_COLOURS = ['#007AFF','#FF3B30','#FF9500','#34C759','#AF52DE','#FF9F0A','#5AC8FA'];
+    const smartTagMap   = {}; // tagKey → { display, colour, isCardio }
+
     const data = weeks.map(dates => {
-      let gym = 0, sport = 0, miles = 0, golf = 0, bjj = 0;
+      const entry = { gym: 0, bjj: 0, golf: 0, miles: 0 };
       dates.forEach(dateStr => {
         const ci = allCheckIns[dateStr];
         if (!ci || !ci.completed) return;
-        const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci.rag || 'green');
-        if (session.type === 'hypertrophy') gym++;
-        if (session.type === 'bjj')         bjj++;
-        if (session.type === 'golf')        golf++;
-        if (session.type === 'cycle')       miles += session.distance || 0;
+        const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci.rag || 'green', programme, programmeLengthWeeks);
+        if (isSmart) {
+          if (!session.type.startsWith('smart-')) return;
+          const sType    = session.type.replace('smart-', '');
+          const tagKey   = session.tag ? session.tag.toLowerCase() : sType;
+          const display  = session.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
+          const isCardio = sType === 'cardio';
+          if (!smartTagMap[tagKey]) {
+            const idx = Object.keys(smartTagMap).length;
+            smartTagMap[tagKey] = { display, colour: SMART_COLOURS[idx % SMART_COLOURS.length], isCardio };
+          }
+          if (!entry[tagKey]) entry[tagKey] = 0;
+          entry[tagKey] += isCardio ? (session.details?.distance || 1) : 1;
+        } else {
+          if (session.type === 'hypertrophy') entry.gym++;
+          if (session.type === 'bjj')         entry.bjj++;
+          if (session.type === 'golf')        entry.golf++;
+          if (session.type === 'cycle')       entry.miles += session.distance || 0;
+        }
       });
-      return { gym, bjj, golf, miles };
+      return entry;
     });
 
-    // Filter config
-    const filterConfig = {
-      all:          [
-        { key: 'gym',   colour: '#007AFF', label: 'Gym'     },
-        { key: 'bjj',   colour: '#FF3B30', label: 'BJJ'     },
-        { key: 'golf',  colour: '#34C759', label: 'Golf'    },
-        { key: 'miles', colour: '#FF9F0A', label: 'Cycle'   },
-      ],
-      hypertrophy:  [{ key: 'gym',   colour: '#007AFF', label: 'Gym sessions'  }],
-      bjj:          [{ key: 'bjj',   colour: '#FF3B30', label: 'BJJ sessions'  }],
-      golf:         [{ key: 'golf',  colour: '#34C759', label: 'Golf sessions' }],
-      cycle:        [{ key: 'miles', colour: '#FF9F0A', label: 'Cycle'  }],
-    };
+    // Build filter config dynamically for smart
+    let filterConfig, filterOptions;
+    if (isSmart) {
+      const tagKeys    = Object.keys(smartTagMap);
+      const allSeries  = tagKeys.map(k => ({ key: k, colour: smartTagMap[k].colour, label: smartTagMap[k].display }));
+      filterConfig = { all: allSeries };
+      tagKeys.forEach(k => { filterConfig[k] = [{ key: k, colour: smartTagMap[k].colour, label: smartTagMap[k].display }]; });
+      filterOptions = [{ key: 'all', label: 'All' }, ...tagKeys.map(k => ({ key: k, label: smartTagMap[k].display }))];
+    } else {
+      filterConfig = {
+        all:         [
+          { key: 'gym',   colour: '#007AFF', label: 'Gym'   },
+          { key: 'bjj',   colour: '#FF3B30', label: 'BJJ'   },
+          { key: 'golf',  colour: '#34C759', label: 'Golf'  },
+          { key: 'miles', colour: '#FF9F0A', label: 'Cycle' },
+        ],
+        hypertrophy: [{ key: 'gym',   colour: '#007AFF', label: 'Gym sessions'  }],
+        bjj:         [{ key: 'bjj',   colour: '#FF3B30', label: 'BJJ sessions'  }],
+        golf:        [{ key: 'golf',  colour: '#34C759', label: 'Golf sessions' }],
+        cycle:       [{ key: 'miles', colour: '#FF9F0A', label: 'Cycle'         }],
+      };
+      filterOptions = [
+        { key: 'all',         label: 'All'   },
+        { key: 'hypertrophy', label: 'Gym'   },
+        { key: 'bjj',         label: 'BJJ'   },
+        { key: 'golf',        label: 'Golf'  },
+        { key: 'cycle',       label: 'Cycle' },
+      ];
+    }
 
-    const activeSeries = filterConfig[filter] || filterConfig.all;
+    // If current filter doesn't exist in config (e.g. after programme switch), reset
+    if (!filterConfig[filter]) volumeFilter = 'all';
+    const activeSeries = filterConfig[volumeFilter] || filterConfig.all;
     const numBars      = activeSeries.length;
 
     const maxVal = Math.max(1, ...data.map(d =>
@@ -325,10 +363,13 @@ const InsightsPage = (() => {
         font-size="9" fill="#AEAEB2">${label}</text>`;
     });
 
-    // Legend — only show active series
+    // Legend — centred under chart
+    const ITEM_W = 80; // width per legend item (rect + text)
+    const legendTotalW = activeSeries.length * ITEM_W;
+    const legendX = Math.round((W - legendTotalW) / 2);
     let legendHTML = '';
     activeSeries.forEach((s, i) => {
-      const lx = i * 80;
+      const lx = i * ITEM_W;
       legendHTML += `
         <rect x="${lx}" y="0" width="10" height="10" rx="2" fill="${s.colour}" opacity="0.85"/>
         <text x="${lx + 14}" y="9"
@@ -336,15 +377,8 @@ const InsightsPage = (() => {
           font-size="10" fill="#8E8E93">${s.label}</text>`;
     });
 
-    // Filter toggle buttons
-    const filterBtns = [
-      { key: 'all',         label: 'All'   },
-      { key: 'hypertrophy', label: 'Gym'   },
-      { key: 'bjj',         label: 'BJJ'   },
-      { key: 'golf',        label: 'Golf'  },
-      { key: 'cycle',       label: 'Cycle' },
-    ].map(f => `
-      <button class="insights-filter-btn ${filter === f.key ? 'active' : ''}"
+    const filterBtns = filterOptions.map(f => `
+      <button class="insights-filter-btn ${volumeFilter === f.key ? 'active' : ''}"
         data-volume-filter="${f.key}">${f.label}</button>
     `).join('');
 
@@ -352,15 +386,15 @@ const InsightsPage = (() => {
       <div class="insights-filter-row">${filterBtns}</div>
       <svg class="insights-chart-svg" viewBox="0 0 ${W} ${H + 20}">
         ${gridHTML}${barsHTML}${labelsHTML}
-        <g transform="translate(${padL},${H + 6})">${legendHTML}</g>
+        <g transform="translate(${legendX},${H + 6})">${legendHTML}</g>
       </svg>`;
   }
 
   // ─── Section 4: Stat Tiles ─────────────────────────────────
 
-  function calcStats(allCheckIns, programmeStart) {
-    const all     = Object.values(allCheckIns);
-    const logged  = all.filter(c => c && c.score !== undefined);
+  function calcStats(allCheckIns, programmeStart, programme, programmeLengthWeeks) {
+    const all    = Object.values(allCheckIns);
+    const logged = all.filter(c => c && c.score !== undefined);
 
     const avgRecovery  = logged.length ? Math.round(logged.reduce((s, c) => s + c.score, 0) / logged.length) : 0;
     const bestRecovery = logged.length ? Math.max(...logged.map(c => c.score)) : 0;
@@ -370,33 +404,68 @@ const InsightsPage = (() => {
       : '—';
 
     let totalSessions = 0, totalBJJSessions = 0, totalGolf = 0, totalGym = 0, totalMiles = 0;
+    // Smart: per-type totals keyed by tagKey
+    const smartTypeTotals = {}; // { tagKey: { tag, sessions, expected, distance, isCardio } }
 
-    // Count expected sessions from programme start up to today
     let expectedSessions = 0;
+    if (programme === 'smart') {
+      // Seed smartTypeTotals from raw workout list so tiles appear even before completions
+      const allWorkouts = Store.getAllSmartWorkouts ? Store.getAllSmartWorkouts() : [];
+      allWorkouts.forEach(w => {
+        const sType    = w.sessionType || 'other';
+        const tagKey   = w.tag ? w.tag.toLowerCase() : sType;
+        const display  = w.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
+        const isCardio = sType === 'cardio';
+        if (!smartTypeTotals[tagKey]) {
+          smartTypeTotals[tagKey] = { tag: display, sessions: 0, expected: 0, distance: 0, isCardio };
+        }
+      });
+    }
     if (programmeStart) {
-      const start   = new Date(programmeStart + 'T00:00:00');
-      const today   = new Date();
+      const start = new Date(programmeStart + 'T00:00:00');
+      const today = new Date();
       today.setHours(0, 0, 0, 0);
       for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-        const y   = d.getFullYear();
-        const mo  = String(d.getMonth() + 1).padStart(2, '0');
-        const dy  = String(d.getDate()).padStart(2, '0');
-        const s   = TrainingData.getSessionForDate(`${y}-${mo}-${dy}`, programmeStart, 'green');
-        if (s.type !== 'rest' && s.type !== 'none') expectedSessions++;
+        const y  = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const dy = String(d.getDate()).padStart(2, '0');
+        const s  = TrainingData.getSessionForDate(`${y}-${mo}-${dy}`, programmeStart, 'green', programme, programmeLengthWeeks);
+        if (s.type !== 'rest' && s.type !== 'none') {
+          expectedSessions++;
+          if (programme === 'smart' && s.type.startsWith('smart-')) {
+            const sType   = s.type.replace('smart-', '');
+            const tagKey  = s.tag ? s.tag.toLowerCase() : sType;
+            const display = s.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
+            const isCardio = sType === 'cardio';
+            if (!smartTypeTotals[tagKey]) smartTypeTotals[tagKey] = { tag: display, sessions: 0, expected: 0, distance: 0, isCardio };
+            smartTypeTotals[tagKey].expected++;
+          }
+        }
       }
     }
 
     Object.entries(allCheckIns).forEach(([dateStr, ci]) => {
       if (!ci || !ci.completed) return;
-      const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci.rag || 'green');
+      const session = TrainingData.getSessionForDate(dateStr, programmeStart, ci.rag || 'green', programme, programmeLengthWeeks);
       totalSessions++;
-      if (session.type === 'bjj')         totalBJJSessions++;
-      if (session.type === 'golf')        totalGolf++;
-      if (session.type === 'hypertrophy') totalGym++;
-      if (session.type === 'cycle')       totalMiles += session.distance || 0;
+
+      if (programme === 'smart') {
+        if (!session.type.startsWith('smart-')) return;
+        const sType    = session.type.replace('smart-', '');
+        const tagKey   = session.tag ? session.tag.toLowerCase() : sType;
+        const display  = session.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
+        const isCardio = sType === 'cardio';
+        if (!smartTypeTotals[tagKey]) smartTypeTotals[tagKey] = { tag: display, sessions: 0, expected: 0, distance: 0, isCardio };
+        smartTypeTotals[tagKey].sessions++;
+        if (isCardio) smartTypeTotals[tagKey].distance += session.details?.distance || 0;
+      } else {
+        if (session.type === 'bjj')         totalBJJSessions++;
+        if (session.type === 'golf')        totalGolf++;
+        if (session.type === 'hypertrophy') totalGym++;
+        if (session.type === 'cycle')       totalMiles += session.distance || 0;
+      }
     });
 
-    // Longest streak
     const keys = Object.keys(allCheckIns).sort();
     let longest = 0, current = 0, lastDate = null;
     keys.forEach(k => {
@@ -412,21 +481,33 @@ const InsightsPage = (() => {
       lastDate = k;
     });
 
-    return { totalSessions, expectedSessions, avgRecovery, bestRecovery, bestRecoveryDate, totalBJJSessions, totalGolf, totalGym, totalMiles, longestStreak: longest };
+    return { totalSessions, expectedSessions, avgRecovery, bestRecovery, bestRecoveryDate, totalBJJSessions, totalGolf, totalGym, totalMiles, longestStreak: longest, smartTypeTotals };
   }
 
-  function buildStatTiles(stats) {
-    const tiles = [
-      { sub: 'Sessions',        value: stats.totalSessions,    label: `of ${stats.expectedSessions}` },
-      { sub: 'Longest Streak',  value: stats.longestStreak,    label: 'check-ins'          },
-      { sub: 'Avg Readiness',   value: `${Math.round(stats.avgRecovery)}%`,  label: 'across programme' },
-      { sub: 'Best Readiness',  value: `${Math.round(stats.bestRecovery)}%`, label: stats.bestRecoveryDate || '—' },
-      { sub: 'BJJ',             value: stats.totalBJJSessions,  label: 'sessions logged'   },
-      { sub: 'Cycling',  value: Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934), label: `${Units.distanceUnit()} total` },
-      { sub: 'Hypertrophy',     value: stats.totalGym,           label: 'sessions logged'  },
-      { sub: 'Golf',            value: stats.totalGolf,          label: 'sessions logged'  },
+  function buildStatTiles(stats, isSmart) {
+    const base = [
+      { sub: 'Sessions',       value: stats.totalSessions,                              label: `of ${stats.expectedSessions}` },
+      { sub: 'Longest Streak', value: stats.longestStreak,                              label: 'check-ins'          },
+      { sub: 'Avg Readiness',  value: `${Math.round(stats.avgRecovery)}%`,              label: 'across programme'   },
+      { sub: 'Best Readiness', value: `${Math.round(stats.bestRecovery)}%`,             label: stats.bestRecoveryDate || '—' },
     ];
 
+    const typeTiles = isSmart
+      ? Object.values(stats.smartTypeTotals).map(t => ({
+          sub:   t.tag,
+          value: t.isCardio
+            ? (Units.isImperial() ? Math.round(t.distance) : Math.round(t.distance * 1.60934))
+            : t.sessions,
+          label: t.isCardio ? `${Units.distanceUnit()} total` : 'sessions logged',
+        }))
+      : [
+          { sub: 'BJJ',         value: stats.totalBJJSessions, label: 'sessions logged' },
+          { sub: 'Cycling',     value: Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934), label: `${Units.distanceUnit()} total` },
+          { sub: 'Hypertrophy', value: stats.totalGym,          label: 'sessions logged' },
+          { sub: 'Golf',        value: stats.totalGolf,          label: 'sessions logged' },
+        ];
+
+    const tiles = [...base, ...typeTiles];
     return `<div class="insights-tiles-grid">
       ${tiles.map(t => `
         <div class="insights-tile">
@@ -487,12 +568,11 @@ const InsightsPage = (() => {
             <h1>Insights</h1>
             <div class="insights-header-sub">Your training at a glance</div>
           </div>
-          <div class="insights-body">
-            <div class="insights-empty" style="margin-top:var(--space-xl)">
-              <div class="insights-empty-icon">📊</div>
-              <div class="insights-empty-text">Select a programme and set a start date in Profile to unlock your insights.</div>
-              <button class="btn btn-primary" id="insights-go-profile" style="margin-top:var(--space-lg)">Go to Profile</button>
-            </div>
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <div class="empty-state-title">No data yet</div>
+            <div class="empty-state-text">Select a programme and set a start date in Profile to unlock your insights.</div>
+            <button class="btn btn-primary" id="insights-go-profile">Go to Profile</button>
           </div>
         </div>`;
       document.getElementById('insights-go-profile')?.addEventListener('click', () => {
@@ -502,7 +582,8 @@ const InsightsPage = (() => {
       return;
     }
 
-    const stats = calcStats(allCheckIns, profile.programmeStart);
+    const isSmart = profile.programme === 'smart';
+    const stats = calcStats(allCheckIns, profile.programmeStart, profile.programme, profile.programmeLengthWeeks);
 
     page.innerHTML = `
       <div class="insights-page">
@@ -540,14 +621,14 @@ const InsightsPage = (() => {
           <div>
             <div class="insights-section-label">Weekly Volume</div>
             <div class="insights-card" id="insights-volume-card">
-              ${buildVolumeChart(allCheckIns, profile.programmeStart, volumeFilter)}
+              ${buildVolumeChart(allCheckIns, profile.programmeStart, volumeFilter, profile.programme, profile.programmeLengthWeeks)}
             </div>
           </div>
 
           <!-- Section 4: Stats -->
           <div>
             <div class="insights-section-label">Personal Bests</div>
-            ${buildStatTiles(stats)}
+            ${buildStatTiles(stats, isSmart)}
           </div>
 
           <!-- Section 5: RAG Breakdown -->

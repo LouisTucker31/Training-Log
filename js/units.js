@@ -25,6 +25,10 @@ const Units = (() => {
     return isImperial() ? 'mi' : 'km';
   }
 
+  function speedUnit() {
+    return isImperial() ? 'mph' : 'km/h';
+  }
+
   // ─── Weight ───────────────────────────────────────────────
   // Stored as kg
 
@@ -84,6 +88,7 @@ const Units = (() => {
     isImperial,
     displayDistance,
     distanceUnit,
+    speedUnit,
     displayWeight,
     weightUnit,
     weightToStorage,

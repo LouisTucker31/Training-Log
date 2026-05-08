@@ -5,8 +5,9 @@
 const Store = (() => {
 
   const KEYS = {
-    CHECK_INS:    'tl_checkins',
-    PROFILE:      'tl_profile',
+    CHECK_INS:      'tl_checkins',
+    PROFILE:        'tl_profile',
+    SMART_WORKOUTS: 'tl_smart_workouts',
   };
 
   // ─── Helpers ─────────────────────────────────────────────
@@ -93,6 +94,84 @@ const Store = (() => {
     } catch { return false; }
   }
 
+  // ─── Smart Workouts ───────────────────────────────────────
+  // Each workout: { id, name, sessionType, startDate, recurrence,
+  //   recurrenceEveryDays, details: {...} }
+  // recurrence: 'none' | 'weekly' | 'custom'
+
+  function getAllSmartWorkouts() {
+    return read(KEYS.SMART_WORKOUTS) || [];
+  }
+
+  function saveSmartWorkout(workout) {
+    const all = getAllSmartWorkouts();
+    const idx = all.findIndex(w => w.id === workout.id);
+    if (idx >= 0) all[idx] = workout;
+    else all.push(workout);
+    return write(KEYS.SMART_WORKOUTS, all);
+  }
+
+  function deleteSmartWorkout(id, mode) {
+    // mode: 'this' | 'forward' | 'all'
+    // For 'this': add the date to an exceptions list on the workout
+    // For 'forward': set an endDate on the workout
+    // For 'all': remove entirely
+    const all = getAllSmartWorkouts();
+    const idx = all.findIndex(w => w.id === id);
+    if (idx < 0) return false;
+    if (mode === 'all') {
+      all.splice(idx, 1);
+    } else if (mode === 'forward') {
+      const today = todayKey();
+      all[idx].endDate = today;
+    } else {
+      const today = todayKey();
+      all[idx].exceptions = all[idx].exceptions || [];
+      if (!all[idx].exceptions.includes(today)) all[idx].exceptions.push(today);
+    }
+    return write(KEYS.SMART_WORKOUTS, all);
+  }
+
+  function deleteSmartWorkoutOnDate(id, dateStr, mode) {
+    const all = getAllSmartWorkouts();
+    const idx = all.findIndex(w => w.id === id);
+    if (idx < 0) return false;
+    if (mode === 'all') {
+      all.splice(idx, 1);
+    } else if (mode === 'forward') {
+      all[idx].endDate = dateStr;
+    } else {
+      all[idx].exceptions = all[idx].exceptions || [];
+      if (!all[idx].exceptions.includes(dateStr)) all[idx].exceptions.push(dateStr);
+    }
+    return write(KEYS.SMART_WORKOUTS, all);
+  }
+
+  function getSmartWorkoutForDate(dateStr) {
+    const all = getAllSmartWorkouts();
+    for (const w of all) {
+      if (!w.startDate) continue;
+      if (dateStr < w.startDate) continue;
+      if (w.endDate && dateStr >= w.endDate) continue;
+      if (w.exceptions && w.exceptions.includes(dateStr)) continue;
+      if (w.recurrence === 'none') {
+        if (w.startDate === dateStr) return w;
+      } else if (w.recurrence === 'weekly') {
+        const start = new Date(w.startDate + 'T00:00:00');
+        const target = new Date(dateStr + 'T00:00:00');
+        const diff = Math.round((target - start) / (1000 * 60 * 60 * 24));
+        if (diff >= 0 && diff % 7 === 0) return w;
+      } else if (w.recurrence === 'custom') {
+        const days = parseInt(w.recurrenceEveryDays) || 1;
+        const start = new Date(w.startDate + 'T00:00:00');
+        const target = new Date(dateStr + 'T00:00:00');
+        const diff = Math.round((target - start) / (1000 * 60 * 60 * 24));
+        if (diff >= 0 && diff % days === 0) return w;
+      }
+    }
+    return null;
+  }
+
   // ─── Trend data (last N days) ─────────────────────────────
 
   function getRecentCheckIns(days = 30) {
@@ -123,6 +202,11 @@ const Store = (() => {
     deleteCheckIn,
     getRecentCheckIns,
     clearAllData,
+    getAllSmartWorkouts,
+    saveSmartWorkout,
+    deleteSmartWorkout,
+    deleteSmartWorkoutOnDate,
+    getSmartWorkoutForDate,
   };
 
 })();
