@@ -112,26 +112,38 @@ function unlockBodyScroll() {
 // scrollBody: a DOM element or {scrollTop} proxy; pass null if no inner scroll
 // onDismiss:  called when the downward drag exceeds the threshold
 function attachModalDrag(modal, scrollBody, onDismiss) {
-  let startY = 0, lastY = 0, dragging = false, cancelled = false;
+  let startX = 0, startY = 0, lastY = 0, lastX = 0, dragging = false, cancelled = false;
 
   modal.addEventListener('touchstart', e => {
+    startX    = e.touches[0].clientX;
     startY    = e.touches[0].clientY;
     lastY     = startY;
+    lastX     = startX;
     dragging  = false;
-    cancelled = false;
+    // Don't intercept touches that start on a range slider
+    cancelled = e.target.type === 'range';
   }, { passive: true });
 
   modal.addEventListener('touchmove', e => {
     if (cancelled) return;
     lastY = e.touches[0].clientY;
-    const dy  = lastY - startY;
+    lastX = e.touches[0].clientX;
+    const dy = lastY - startY;
+    const dx = Math.abs(lastX - startX);
+
+    // If the gesture is more horizontal than vertical, treat as a scroll gesture
+    if (!dragging && dx > Math.abs(dy) && dx > 8) {
+      cancelled = true;
+      return;
+    }
+
     const atTop = !scrollBody || scrollBody.scrollTop <= 0;
 
     if (!dragging) {
-      if (dy > 6 && atTop) {
+      if (dy > 8 && atTop) {
         dragging = true;
         modal.style.transition = 'none';
-      } else if (dy < -2 || !atTop) {
+      } else if (dy < -4 || !atTop) {
         cancelled = true;
         return;
       } else {
@@ -147,7 +159,10 @@ function attachModalDrag(modal, scrollBody, onDismiss) {
     if (!dragging) return;
     dragging = false;
     modal.style.transition = '';
-    if (lastY - startY > 120) {
+    const dy = lastY - startY;
+    const dx = Math.abs(lastX - startX);
+    // Only dismiss if clearly a downward drag, not a diagonal flick
+    if (dy > 160 && dx < dy) {
       onDismiss();
     } else {
       modal.style.transform = 'translateY(0)';

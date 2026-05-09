@@ -40,7 +40,6 @@ const InsightsPage = (() => {
     const hasAny = points.some(p => p && p.score !== undefined);
     if (!hasAny) {
       return `<div class="insights-empty">
-        <div class="insights-empty-icon">📈</div>
         <div class="insights-empty-text">No check-ins yet.<br>Complete a morning check-in to see your trend.</div>
       </div>`;
     }
@@ -321,6 +320,20 @@ const InsightsPage = (() => {
     // If current filter doesn't exist in config (e.g. after programme switch), reset
     if (!filterConfig[filter]) volumeFilter = 'all';
     const activeSeries = filterConfig[volumeFilter] || filterConfig.all;
+
+    const filterBtns = filterOptions.map(f => `
+      <button class="insights-filter-btn ${volumeFilter === f.key ? 'active' : ''}"
+        data-volume-filter="${f.key}">${f.label}</button>
+    `).join('');
+
+    const hasAnyVolume = data.some(d => activeSeries.some(s => (d[s.key] || 0) > 0));
+    if (!hasAnyVolume) {
+      return `
+        <div class="insights-filter-row">${filterBtns}</div>
+        <div class="insights-empty">
+          <div class="insights-empty-text">No sessions logged yet.<br>Complete workouts to see your weekly volume.</div>
+        </div>`;
+    }
     const numBars      = activeSeries.length;
 
     const maxVal = Math.max(1, ...data.map(d =>
@@ -376,11 +389,6 @@ const InsightsPage = (() => {
           font-family="-apple-system,BlinkMacSystemFont,sans-serif"
           font-size="10" fill="#8E8E93">${s.label}</text>`;
     });
-
-    const filterBtns = filterOptions.map(f => `
-      <button class="insights-filter-btn ${volumeFilter === f.key ? 'active' : ''}"
-        data-volume-filter="${f.key}">${f.label}</button>
-    `).join('');
 
     return `
       <div class="insights-filter-row">${filterBtns}</div>
@@ -485,26 +493,27 @@ const InsightsPage = (() => {
   }
 
   function buildStatTiles(stats, isSmart) {
+    const noData = stats.totalSessions === 0;
     const base = [
-      { sub: 'Sessions',       value: stats.totalSessions,                              label: `of ${stats.expectedSessions}` },
-      { sub: 'Longest Streak', value: stats.longestStreak,                              label: 'check-ins'          },
-      { sub: 'Avg Readiness',  value: `${Math.round(stats.avgRecovery)}%`,              label: 'across programme'   },
-      { sub: 'Best Readiness', value: `${Math.round(stats.bestRecovery)}%`,             label: stats.bestRecoveryDate || '—' },
+      { sub: 'Sessions',       value: noData ? '—' : stats.totalSessions,                              label: `of ${stats.expectedSessions}` },
+      { sub: 'Longest Streak', value: noData ? '—' : stats.longestStreak,                              label: 'check-ins'          },
+      { sub: 'Avg Readiness',  value: noData ? '—' : `${Math.round(stats.avgRecovery)}%`,              label: 'across programme'   },
+      { sub: 'Best Readiness', value: noData ? '—' : `${Math.round(stats.bestRecovery)}%`,             label: stats.bestRecoveryDate || '—' },
     ];
 
     const typeTiles = isSmart
       ? Object.values(stats.smartTypeTotals).map(t => ({
           sub:   t.tag,
-          value: t.isCardio
+          value: t.sessions === 0 ? '—' : (t.isCardio
             ? (Units.isImperial() ? Math.round(t.distance) : Math.round(t.distance * 1.60934))
-            : t.sessions,
+            : t.sessions),
           label: t.isCardio ? `${Units.distanceUnit()} total` : 'sessions logged',
         }))
       : [
-          { sub: 'BJJ',         value: stats.totalBJJSessions, label: 'sessions logged' },
-          { sub: 'Cycling',     value: Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934), label: `${Units.distanceUnit()} total` },
-          { sub: 'Hypertrophy', value: stats.totalGym,          label: 'sessions logged' },
-          { sub: 'Golf',        value: stats.totalGolf,          label: 'sessions logged' },
+          { sub: 'BJJ',         value: stats.totalBJJSessions === 0 ? '—' : stats.totalBJJSessions, label: 'sessions logged' },
+          { sub: 'Cycling',     value: stats.totalMiles === 0 ? '—' : (Units.isImperial() ? Math.round(stats.totalMiles) : Math.round(stats.totalMiles * 1.60934)), label: `${Units.distanceUnit()} total` },
+          { sub: 'Hypertrophy', value: stats.totalGym === 0 ? '—' : stats.totalGym,          label: 'sessions logged' },
+          { sub: 'Golf',        value: stats.totalGolf === 0 ? '—' : stats.totalGolf,          label: 'sessions logged' },
         ];
 
     const tiles = [...base, ...typeTiles];
@@ -526,7 +535,6 @@ const InsightsPage = (() => {
 
     if (total === 0) {
       return `<div class="insights-empty">
-        <div class="insights-empty-icon">🟢</div>
         <div class="insights-empty-text">No check-in data yet.</div>
       </div>`;
     }

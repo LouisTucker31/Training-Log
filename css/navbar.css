@@ -64,12 +64,11 @@
   align-items: flex-start;   /* track at top; safe area space below */
   justify-content: center;
 
-  /* Height = bar + iPhone home indicator clearance */
-  height: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px));
+  /* Height = bar + 24px bottom gap to match side insets */
+  height: calc(var(--nav-inner-height) + 24px);
 
-  /* Sit flush against the home indicator — safe area handles the gap */
   padding-top: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 24px;
 
   /* Side insets for notch/rounded corners + breathing room */
   padding-left:  calc(env(safe-area-inset-left,  0px) + 24px);

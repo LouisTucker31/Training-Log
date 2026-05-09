@@ -22,7 +22,8 @@ const LogModal = (() => {
   let STEPS      = CHECKIN_STEPS;
   let TOTAL_STEPS = STEPS.length;
 
-  let _weatherCache = null; // { temp, condition, icon } or null
+  let _weatherCache     = null;
+  let _weatherCacheDate = null;
 
   // ─── Weather ──────────────────────────────────────────────
 
@@ -39,25 +40,30 @@ const LogModal = (() => {
   };
 
   async function fetchWeather() {
-    if (_weatherCache) return _weatherCache;
+    const today = new Date().toISOString().slice(0, 10);
+    if (_weatherCache && _weatherCacheDate === today) return _weatherCache;
     return new Promise(resolve => {
       if (!navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(async pos => {
         try {
           const { latitude: lat, longitude: lon } = pos.coords;
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto&forecast_days=1`;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto&forecast_days=2`;
           const res  = await fetch(url);
           const data = await res.json();
           const temp = Math.round(data.current.temperature_2m);
           const code = data.current.weathercode;
           const [condition, icon] = WMO_CODES[code] || ['Unknown', '🌡️'];
 
-          // Build next 5 hourly slots from now
-          const nowHour = new Date().getHours();
-          const hourly  = [];
-          for (let i = 0; i < data.hourly.time.length && hourly.length < 5; i++) {
-            const h = new Date(data.hourly.time[i]).getHours();
-            if (h <= nowHour) continue;
+          // Collect all hourly slots from the next hour onwards (today + tomorrow)
+          const now          = new Date();
+          const nowHour      = now.getHours();
+          const todayDateStr = now.toISOString().slice(0, 10);
+          const hourly       = [];
+          for (let i = 0; i < data.hourly.time.length; i++) {
+            const slotDateStr = data.hourly.time[i].slice(0, 10);
+            const h           = new Date(data.hourly.time[i]).getHours();
+            const isToday     = slotDateStr === todayDateStr;
+            if (isToday && h <= nowHour) continue;
             const [, hIcon] = WMO_CODES[data.hourly.weathercode[i]] || ['', '🌡️'];
             hourly.push({ hour: h, icon: hIcon, temp: Math.round(data.hourly.temperature_2m[i]) });
           }
@@ -65,10 +71,32 @@ const LogModal = (() => {
           const high = Math.round(data.daily.temperature_2m_max[0]);
           const low  = Math.round(data.daily.temperature_2m_min[0]);
 
-          _weatherCache = { temp, condition, icon, hourly, high, low };
+          _weatherCacheDate = today;
+          _weatherCache     = { temp, condition, icon, hourly, high, low };
           resolve(_weatherCache);
         } catch { resolve(null); }
       }, () => resolve(null), { timeout: 5000 });
+    });
+  }
+
+  // ─── Hourly strip mouse-drag scroll ──────────────────────────
+  function bindHourlyDrag() {
+    const strip = document.querySelector('.welcome-hourly');
+    if (!strip || strip._dragBound) return;
+    strip._dragBound = true;
+    let isDown = false, startX = 0, scrollLeft = 0;
+    strip.addEventListener('mousedown', e => {
+      isDown = true;
+      startX = e.pageX - strip.offsetLeft;
+      scrollLeft = strip.scrollLeft;
+      strip.classList.add('is-dragging');
+    });
+    strip.addEventListener('mouseleave', () => { isDown = false; strip.classList.remove('is-dragging'); });
+    strip.addEventListener('mouseup',    () => { isDown = false; strip.classList.remove('is-dragging'); });
+    strip.addEventListener('mousemove', e => {
+      if (!isDown) return;
+      e.preventDefault();
+      strip.scrollLeft = scrollLeft - (e.pageX - strip.offsetLeft - startX);
     });
   }
 
@@ -126,10 +154,19 @@ const LogModal = (() => {
       rest:           '#8E8E93', none:           '#8E8E93', 'smart-other': '#8E8E93',
     };
 
+    const restTile = `
+      <div class="welcome-session-row">
+        <span class="welcome-session-badge" style="color:#8E8E93;background:rgba(142,142,147,0.1)">REST</span>
+        <div class="welcome-session-info">
+          <div class="welcome-session-title">Rest Day</div>
+          <div class="welcome-session-sub">Rest & Recover</div>
+        </div>
+      </div>`;
+
     const sessionsHTML = todaysSessions.length
       ? todaysSessions.map(s => {
           const isRest = s.type === 'rest' || s.type === 'none';
-          if (isRest) return '';
+          if (isRest) return restTile;
           const badge  = (s.tag || s.type).toUpperCase().slice(0, 7);
           const title  = s.name || s.label || 'Session';
           const sub    = s.subtitle || s.note || '';
@@ -142,8 +179,8 @@ const LogModal = (() => {
                 ${sub ? `<div class="welcome-session-sub">${sub}</div>` : ''}
               </div>
             </div>`;
-        }).filter(Boolean).join('') || `<div class="welcome-session-rest">Rest & Recover</div>`
-      : `<div class="welcome-session-rest">Rest & Recover</div>`;
+        }).join('')
+      : restTile;
 
     return `
       <div class="modal-step welcome-step" data-step="welcome">
@@ -310,6 +347,9 @@ const LogModal = (() => {
       }
     });
     currentStep = index;
+    // Reveal "Daily Readiness" title once past the welcome step
+    const titleEl = document.getElementById('modal-header-title');
+    if (titleEl) titleEl.style.visibility = (STEPS[index] === 'welcome') ? 'hidden' : 'visible';
     updateProgress();
   }
 
@@ -334,7 +374,7 @@ const LogModal = (() => {
         <div class="modal-handle"></div>
         <div class="modal-header">
           <button class="modal-close-btn" id="modal-back-btn" style="visibility:hidden;">‹</button>
-          <span class="modal-header-title">Daily Readiness</span>
+          <span class="modal-header-title" id="modal-header-title" ${welcomeHTML ? 'style="visibility:hidden;"' : ''}>Daily Readiness</span>
           <button class="modal-close-btn" id="log-modal-close">✕</button>
         </div>
         <div class="modal-progress" id="modal-progress-bar" ${welcomeHTML ? 'style="display:none"' : ''}>
@@ -480,7 +520,7 @@ const LogModal = (() => {
     return `
       <div class="modal-step" data-step="joint">
         <div class="step-question">Joint Pain</div>
-        <div class="step-hint">Rate any joint pain or discomfort (≥6 is auto-red)</div>
+        <div class="step-hint">Rate any joint pain or discomfort today</div>
         <div class="slider-wrap">
           <div class="slider-value-display" id="joint-value-display">${answers.jointPain ?? 0}</div>
           <input class="range-input" id="input-joint" type="range"
@@ -759,6 +799,7 @@ const LogModal = (() => {
 
     // Welcome continue
     document.getElementById('next-welcome')?.addEventListener('click', () => advance());
+    bindHourlyDrag();
 
     // Drag to dismiss — scroll body is the currently visible step
     const modal = document.getElementById('log-modal');
@@ -940,6 +981,7 @@ const LogModal = (() => {
               </div>
               ${hourlyHTML}
             </div>`;
+          bindHourlyDrag();
         }
       });
     }

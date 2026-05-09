@@ -45,9 +45,9 @@
   align-items: center;
   background: rgba(0, 122, 255, 0.10);
   color: var(--colour-blue);
-  font-size: var(--text-footnote);
+  font-size: 12px;
   font-weight: 600;
-  padding: 4px 14px;
+  padding: 3px 10px;
   border-radius: 100px;
 }
 
@@ -62,7 +62,7 @@
   color: var(--label-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: var(--space-sm) var(--space-xs) var(--space-xs);
+  padding: var(--space-sm) var(--space-xs);
 }
 
 .settings-card {
@@ -122,8 +122,11 @@
 
 .settings-row-input[type="date"] {
   color: var(--label-secondary);
+  flex: 0 0 auto;
+  margin-left: auto;
+  max-width: 160px;
   text-align: right;
-  -webkit-text-align: right;
+  text-align-last: right;
 }
 
 .settings-row-hint {
@@ -194,10 +197,19 @@
   cursor: pointer;
 }
 
+.settings-destructive-link {
+  font-size: var(--text-subhead);
+  color: var(--colour-red);
+  display: table;
+  margin: 0 auto;
+  padding: 8px var(--space-md);
+  cursor: pointer;
+}
+
 /* ─── About ──────────────────────────────────────────────── */
 .settings-about {
   text-align: center;
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-xs) var(--space-md) var(--space-lg);
   font-size: var(--text-footnote);
   color: var(--label-quaternary);
   line-height: 1.6;

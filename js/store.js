@@ -94,6 +94,7 @@ const Store = (() => {
     try {
       localStorage.removeItem(KEYS.CHECK_INS);
       localStorage.removeItem(KEYS.PROFILE);
+      localStorage.removeItem(KEYS.SMART_WORKOUTS);
       return true;
     } catch { return false; }
   }

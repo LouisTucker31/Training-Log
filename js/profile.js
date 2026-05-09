@@ -254,7 +254,6 @@ const ProfilePage = (() => {
                 id="input-start-date"
                 type="date"
                 value="${profile.programme ? ((profile.programmeDates || {})[profile.programme] || '') : ''}"
-                style="text-align:right;"
               />
             </div>
             <div class="settings-row">
@@ -264,7 +263,7 @@ const ProfilePage = (() => {
                 id="input-rhr-baseline"
                 type="number"
                 inputmode="decimal"
-                placeholder="Add your resting HR"
+                placeholder="—"
                 value="${profile.rhrBaseline || ''}"
               />
               <span class="settings-row-hint">bpm</span>
@@ -277,11 +276,7 @@ const ProfilePage = (() => {
         <!-- DATA -->
         <div class="settings-group">
           <div class="settings-group-title">Data</div>
-          <div class="settings-card">
-            <div class="settings-row" id="btn-clear-data">
-              <span class="settings-row-destructive">Reset App & Clear All Data</span>
-            </div>
-          </div>
+          <div id="btn-clear-data" class="settings-destructive-link">Reset App &amp; Clear All Data</div>
         </div>
 
         <!-- ABOUT -->
@@ -428,7 +423,7 @@ const ProfilePage = (() => {
     document.getElementById('btn-clear-data')?.addEventListener('click', () => {
       showAlert({
         title:              'Reset App',
-        message:            'This will clear all check-in data and profile settings. This cannot be undone.',
+        message:            'This will clear all check-in data, smart programme workouts, and profile settings. This cannot be undone.',
         confirmLabel:       'Reset',
         confirmDestructive: true,
         onConfirm: () => {

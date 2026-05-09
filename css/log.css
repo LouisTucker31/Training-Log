@@ -480,10 +480,11 @@
 .welcome-step {
   display: flex;
   flex-direction: column;
+  padding: 0 20px 0;
 }
 
 .welcome-inline-cta {
-  margin-top: var(--space-lg);
+  margin-top: 20px;
 }
 
 /* Greeting — smaller, secondary, sits above the time */
@@ -492,20 +493,21 @@
   font-size: 17px;
   font-weight: 500;
   color: var(--label-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  margin-top: 2px;
 }
 
 /* Time is the dominant hero */
 .welcome-datetime {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 10px;
+  gap: 4px;
+  margin-bottom: 20px;
 }
 
 .welcome-time {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-  font-size: 60px;
+  font-size: 64px;
   font-weight: 700;
   color: var(--label-primary);
   letter-spacing: -2px;
@@ -514,7 +516,8 @@
 
 .welcome-date {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  font-size: 15px;
+  font-size: 17px;
+  font-weight: 400;
   color: var(--label-secondary);
 }
 
@@ -523,32 +526,34 @@
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   font-size: 13px;
   color: var(--label-tertiary);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  margin-top: 4px;
 }
 
 /* Weather block */
 .welcome-weather-block {
-  background: var(--bg-card);
-  border-radius: 12px;
+  background: #F9F9F9;
+  border-radius: 16px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
-  padding: 12px 14px;
+  padding: 14px 16px 0;
   margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .welcome-weather-main {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .welcome-weather-icon {
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .welcome-weather-temp {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--label-primary);
   letter-spacing: -0.5px;
@@ -576,8 +581,14 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   border-top: 0.5px solid var(--separator-opaque);
-  padding-top: 10px;
-  margin: 0 -2px;
+  padding: 12px 16px 24px;
+  margin: 0 -16px;
+  cursor: grab;
+  user-select: none;
+}
+
+.welcome-hourly.is-dragging {
+  cursor: grabbing;
 }
 
 .welcome-hourly::-webkit-scrollbar { display: none; }
@@ -586,19 +597,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 52px;
+  gap: 5px;
+  min-width: 58px;
   flex-shrink: 0;
 }
 
 .welcome-hourly-time {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--label-tertiary);
 }
 
 .welcome-hourly-icon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
 }
 
@@ -613,25 +624,26 @@
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--label-tertiary);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  margin-top: 4px;
 }
 
 .welcome-sessions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .welcome-session-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 12px 14px;
+  gap: 14px;
+  background: #F9F9F9;
+  border-radius: 14px;
+  padding: 14px 16px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
 }
 
@@ -640,9 +652,9 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  width: 52px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  width: 54px;
   flex-shrink: 0;
   text-align: center;
   overflow: hidden;
@@ -653,7 +665,7 @@
 .welcome-session-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .welcome-session-title {
@@ -673,7 +685,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   font-size: 15px;
   color: var(--label-tertiary);
-  padding: 12px 0;
+  padding: 14px 0;
 }
 
 /* ─── Log Page (today's result, when not in modal) ───────── */

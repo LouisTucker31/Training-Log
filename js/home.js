@@ -52,7 +52,6 @@ const HomePage = (() => {
               font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"
               font-size="15" fill="#AEAEB2">No check-in</text>
           </svg>
-          <div class="home-ring-hint">Tap Today below to check in</div>
         </div>`;
     }
 

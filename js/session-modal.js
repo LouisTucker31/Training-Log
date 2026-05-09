@@ -139,7 +139,34 @@ function buildModalBody(session, dateStr) {
   const notes = ci.sessionNotes || '';
 
   if (session.type === 'rest' || session.type === 'none') {
-    return `<p style="color:#8E8E93;font-size:15px;margin-top:8px;">Rest day — take it easy.</p>`;
+    const rag = ci.rag || 'green';
+    const restMessages = {
+      red:   { headline: 'Your body needs this one.', body: 'Your readiness is low — prioritise sleep, hydration, and full rest. Skip any extra activity today.' },
+      amber: { headline: 'Take it easy today.', body: 'A lighter day. Light walking, stretching or mobility work is fine, but avoid anything that adds fatigue.' },
+      green: { headline: 'Rest & recover.', body: 'Active recovery day — a short walk or mobility session is plenty. Let your body absorb the recent training.' },
+    };
+    const msg = restMessages[rag] || restMessages.green;
+
+    return `
+      <div style="margin-top:16px;background:#F9F9F9;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <div style="font-size:15px;font-weight:600;color:#000;margin-bottom:6px;">${msg.headline}</div>
+        <div style="font-size:14px;color:#8E8E93;line-height:1.5;">${msg.body}</div>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Notes</div>
+        <textarea
+          id="session-notes-input"
+          placeholder="How are you feeling today?"
+          style="
+            width:100%;min-height:90px;padding:12px 16px;
+            background:#F9F9F9;border:none;
+            border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+            box-shadow:0 2px 8px rgba(0,0,0,0.08);
+            font-size:15px;color:#000;resize:none;outline:none;
+            -webkit-appearance:none;box-sizing:border-box;
+          "
+        >${notes}</textarea>
+      </div>`;
   }
   if (session.type === 'race') {
     return `<p style="color:#8E8E93;font-size:15px;margin-top:8px;">Cycling event — Fri to Sun, ~130 miles per day.</p>`;
@@ -597,7 +624,7 @@ function openSessionModal(dateStr) {
             data-completed="${completed}"
             style="min-height:52px;font-size:17px;opacity:${completed ? '0.6' : '1'};"
           >${btnText}</button>
-        </div>` : ''}
+        </div>` : `<div style="padding-bottom:calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg) + 12px);"></div>`}
       </div>
     </div>
   `;
