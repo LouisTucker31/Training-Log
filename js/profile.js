@@ -253,7 +253,7 @@ const ProfilePage = (() => {
                 class="settings-row-input"
                 id="input-start-date"
                 type="date"
-                value="${profile.programme ? ((profile.programmeDates || {})[profile.programme] || '') : ''}"
+                value="${profile.programme ? ((profile.programmeDates || {})[profile.programme] || Store.todayKey()) : ''}"
               />
             </div>
             <div class="settings-row">
@@ -401,10 +401,10 @@ const ProfilePage = (() => {
       if (lengthRow) lengthRow.style.display = val === 'smart' ? '' : 'none';
       if (sportsGroup) sportsGroup.style.display = (!val || val === 'smart') ? 'none' : '';
 
-      // Restore saved start date for this programme if it exists
+      // Restore saved start date for this programme, defaulting to today
       if (val) {
         const existing = Store.getProfile();
-        const saved    = (existing.programmeDates || {})[val] || '';
+        const saved    = (existing.programmeDates || {})[val] || Store.todayKey();
         const input    = document.getElementById('input-start-date');
         if (input) input.value = saved;
       }
