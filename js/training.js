@@ -233,7 +233,9 @@ const TrainingPage = (() => {
               <span class="acc-day-name">${days[i]}</span>
               <span class="acc-day-num">${d.getDate()}</span>
             </div>
-            <span class="acc-type-badge type-${session.type} ${weekOffset !== 0 ? 'is-muted' : ''}">${sessionBadge(session.type, session)}</span>
+            <span class="acc-type-badge type-${session.type} ${weekOffset !== 0 ? 'is-muted' : ''}"
+              ${session.tagColour ? `style="color:${session.tagColour};background:${session.tagColour}1A;"` : ''}
+            >${sessionBadge(session.type, session)}</span>
             <div class="acc-session-info">
               <div class="acc-session-title">${sessionTitle(session)}</div>
               <div class="acc-session-sub">${sessionSub(session)}</div>

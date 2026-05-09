@@ -157,6 +157,7 @@ function buildModalBody(session, dateStr) {
         <textarea
           id="session-notes-input"
           placeholder="How are you feeling today?"
+          autocapitalize="sentences"
           style="
             width:100%;min-height:90px;padding:12px 16px;
             background:#F9F9F9;border:none;
@@ -234,7 +235,7 @@ function buildModalBody(session, dateStr) {
           <button id="gym-copy-btn"
             style="background:none;border:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
             font-size:13px;color:#8E8E93;cursor:pointer;padding:4px 0;">
-            Copy for Bevel
+            Copy to Bevel
           </button>
         </div>
       </div>
@@ -247,7 +248,8 @@ function buildModalBody(session, dateStr) {
               box-shadow:0 2px 8px rgba(0,0,0,0.08);
               background:${(ci.gymRating||0) >= n ? 'rgba(255,149,0,0.12)' : '#F9F9F9'};
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-              font-size:20px;cursor:pointer;">★</button>`).join('')}
+              font-size:20px;cursor:pointer;
+              color:${(ci.gymRating||0) >= n ? '#FF9500' : '#D1D1D6'};">★</button>`).join('')}
         </div>
       </div>`;
   }
@@ -297,7 +299,8 @@ function buildModalBody(session, dateStr) {
               box-shadow:0 2px 8px rgba(0,0,0,0.08);
               background:${(ci.bjjRating||0) >= n ? 'rgba(255,149,0,0.12)' : '#F9F9F9'};
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-              font-size:20px;cursor:pointer;">★</button>`).join('')}
+              font-size:20px;cursor:pointer;
+              color:${(ci.bjjRating||0) >= n ? '#FF9500' : '#D1D1D6'};">★</button>`).join('')}
         </div>
       </div>`;
   }
@@ -361,7 +364,8 @@ function buildModalBody(session, dateStr) {
               box-shadow:0 2px 8px rgba(0,0,0,0.08);
               background:${(ci.cycleRating||0) >= n ? 'rgba(255,149,0,0.12)' : '#F9F9F9'};
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-              font-size:20px;cursor:pointer;">★</button>`).join('')}
+              font-size:20px;cursor:pointer;
+              color:${(ci.cycleRating||0) >= n ? '#FF9500' : '#D1D1D6'};">★</button>`).join('')}
         </div>
       </div>`;
   }
@@ -382,7 +386,7 @@ function buildModalBody(session, dateStr) {
         prev_.setDate(target_.getDate() - intervalDays_ * i);
         const prevStr_ = `${prev_.getFullYear()}-${String(prev_.getMonth()+1).padStart(2,'0')}-${String(prev_.getDate()).padStart(2,'0')}`;
         const prevCI_  = allCIs_[prevStr_];
-        if (prevCI_ && (prevCI_.smartDuration || prevCI_.smartCardioDistance || prevCI_.smartCardioSpeed || prevCI_.smartGymSets)) {
+        if (prevCI_ && (prevCI_.smartDuration || prevCI_.smartCardioDuration || prevCI_.smartCardioDistance || prevCI_.smartCardioSpeed || prevCI_.smartGymSets)) {
           prevSmartCI = prevCI_;
           break;
         }
@@ -390,19 +394,21 @@ function buildModalBody(session, dateStr) {
     }
     const prevDur = prevSmartCI?.smartDuration || '';
 
-    // Duration input (all smart types)
-    html += `
-      <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:15px;color:#000;">Duration</span>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <input id="smart-duration" type="number" inputmode="decimal"
-            value="${smartDur}" placeholder="${smartDur ? '60' : (prevDur || '60')}"
-            style="width:50px;text-align:right;border:none;background:transparent;
-            font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-            font-size:15px;color:#8E8E93;outline:none;"/>
-          <span style="font-size:15px;color:#8E8E93;">mins</span>
-        </div>
-      </div>`;
+    // Duration input (non-cardio smart types — cardio includes it in its own card)
+    if (session.type !== 'smart-cardio') {
+      html += `
+        <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:15px;color:#000;">Duration</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="smart-duration" type="number" inputmode="decimal"
+              value="${smartDur}" placeholder="${smartDur ? '60' : (prevDur || '60')}"
+              style="width:50px;text-align:right;border:none;background:transparent;
+              font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+              font-size:15px;color:#8E8E93;outline:none;"/>
+            <span style="font-size:15px;color:#8E8E93;">mins</span>
+          </div>
+        </div>`;
+    }
 
     // Type-specific content
     if (session.type === 'smart-gym') {
@@ -417,7 +423,7 @@ function buildModalBody(session, dateStr) {
               <button id="gym-copy-btn"
                 style="background:none;border:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
                 font-size:13px;color:#8E8E93;cursor:pointer;padding:4px 0;">
-                Copy for Bevel
+                Copy to Bevel
               </button>
             </div>
           </div>`;
@@ -425,22 +431,34 @@ function buildModalBody(session, dateStr) {
     }
 
     if (session.type === 'smart-cardio') {
+      const det       = session.details || {};
+      const curDur    = ci.smartCardioDuration || '';
       const curDist   = ci.smartCardioDistance || '';
       const curSpeed  = ci.smartCardioSpeed    || '';
-      const prevDist  = prevSmartCI?.smartCardioDistance || '';
-      const prevSpeed = prevSmartCI?.smartCardioSpeed    || '';
-      const cardioRows = [
-        { label: 'Distance', id: 'smart-cardio-distance', val: curDist,  unit: Units.distanceUnit(), placeholder: curDist  ? '0' : (prevDist  || '0') },
-        { label: 'Speed',    id: 'smart-cardio-speed',    val: curSpeed, unit: Units.speedUnit(),    placeholder: curSpeed ? '0' : (prevSpeed || '0') },
+      const prevDur   = prevSmartCI?.smartCardioDuration  || '';
+      const prevDist  = prevSmartCI?.smartCardioDistance  || '';
+      const prevSpeed = prevSmartCI?.smartCardioSpeed     || '';
+
+      // Build rows only for fields that were planned or have a previous actual
+      const allRows = [
+        { label: 'Duration', id: 'smart-cardio-duration', val: curDur,   unit: 'mins',                planned: det.duration, prev: prevDur   },
+        { label: 'Distance', id: 'smart-cardio-distance', val: curDist,  unit: Units.distanceUnit(),   planned: det.distance, prev: prevDist  },
+        { label: 'Speed',    id: 'smart-cardio-speed',    val: curSpeed, unit: Units.speedUnit(),      planned: det.pace,     prev: prevSpeed },
       ];
+      // Show row if a planned value was set, or if there's a recorded actual/previous
+      const cardioRows = allRows.filter(r => r.planned || r.val || r.prev);
+      // If nothing planned at all, show all three
+      const rows = cardioRows.length ? cardioRows : allRows;
+
       html += `
         <div style="margin-top:16px;">
           <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-            ${cardioRows.map((r, i) => `
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i < cardioRows.length - 1 ? 'border-bottom:0.5px solid #E5E5EA;' : ''}">
+            ${rows.map((r, i) => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i < rows.length - 1 ? 'border-bottom:0.5px solid #E5E5EA;' : ''}">
                 <span style="font-size:15px;color:#000;">${r.label}</span>
                 <div style="display:flex;align-items:center;gap:6px;">
-                  <input id="${r.id}" type="number" inputmode="decimal" value="${r.val}" placeholder="${r.placeholder}"
+                  <input id="${r.id}" type="number" inputmode="decimal" value="${r.val}"
+                    placeholder="${r.val ? '' : (r.planned || r.prev || '—')}"
                     style="width:60px;text-align:right;border:none;background:transparent;
                     font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;color:#8E8E93;outline:none;"/>
                   <span style="font-size:15px;color:#8E8E93;">${r.unit}</span>
@@ -462,7 +480,8 @@ function buildModalBody(session, dateStr) {
               box-shadow:0 2px 8px rgba(0,0,0,0.08);
               background:${smartRating >= n ? 'rgba(255,149,0,0.12)' : '#F9F9F9'};
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-              font-size:20px;cursor:pointer;">★</button>`).join('')}
+              font-size:20px;cursor:pointer;
+              color:${smartRating >= n ? '#FF9500' : '#D1D1D6'};">★</button>`).join('')}
         </div>
       </div>`;
 
@@ -472,6 +491,7 @@ function buildModalBody(session, dateStr) {
       <div style="margin-top:16px;">
         <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Session Notes</div>
         <textarea id="smart-notes-input" placeholder="How did it go? Any notes..."
+          autocapitalize="sentences"
           style="width:100%;min-height:90px;padding:12px 16px;background:#F9F9F9;border:none;
           border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
           font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -530,7 +550,8 @@ function buildModalBody(session, dateStr) {
               box-shadow:0 2px 8px rgba(0,0,0,0.08);
               background:${(ci.golfRating||0) >= n ? 'rgba(52,199,89,0.12)' : '#F9F9F9'};
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-              font-size:20px;cursor:pointer;">★</button>`).join('')}
+              font-size:20px;cursor:pointer;
+              color:${(ci.golfRating||0) >= n ? '#34C759' : '#D1D1D6'};">★</button>`).join('')}
         </div>
       </div>`;
   }
@@ -541,6 +562,7 @@ function buildModalBody(session, dateStr) {
       <textarea
         id="session-notes-input"
         placeholder="How did it go? Any notes..."
+        autocapitalize="sentences"
         style="
           width:100%;min-height:90px;padding:12px 16px;
           background:#F9F9F9;border:none;
@@ -655,12 +677,16 @@ function openSessionModal(dateStr) {
   bindMultiSelect('bjj-type-selector', 'type', dateStr, 'bjjTypes', '#007AFF', 'rgba(0,122,255,0.12)');
 
   // BJJ rating
+  let bjjRatingCurrent = (Store.getCheckIn(dateStr) || {}).bjjRating || 0;
   document.getElementById('bjj-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const rating = parseInt(btn.dataset.rating);
-      saveSessionField(dateStr, 'bjjRating', rating);
+      const tapped = parseInt(btn.dataset.rating);
+      bjjRatingCurrent = bjjRatingCurrent === tapped ? 0 : tapped;
+      saveSessionField(dateStr, 'bjjRating', bjjRatingCurrent);
       document.getElementById('bjj-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
-        b.style.background = rating >= parseInt(b.dataset.rating) ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        const active = bjjRatingCurrent >= parseInt(b.dataset.rating);
+        b.style.background = active ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        b.style.color = active ? '#FF9500' : '#D1D1D6';
       });
     });
   });
@@ -669,12 +695,16 @@ function openSessionModal(dateStr) {
   bindMultiSelect('gym-type-selector', 'gtype', dateStr, 'gymTypes', '#007AFF', 'rgba(0,122,255,0.12)');
 
   // Gym rating
+  let gymRatingCurrent = (Store.getCheckIn(dateStr) || {}).gymRating || 0;
   document.getElementById('gym-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const rating = parseInt(btn.dataset.rating);
-      saveSessionField(dateStr, 'gymRating', rating);
+      const tapped = parseInt(btn.dataset.rating);
+      gymRatingCurrent = gymRatingCurrent === tapped ? 0 : tapped;
+      saveSessionField(dateStr, 'gymRating', gymRatingCurrent);
       document.getElementById('gym-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
-        b.style.background = rating >= parseInt(b.dataset.rating) ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        const active = gymRatingCurrent >= parseInt(b.dataset.rating);
+        b.style.background = active ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        b.style.color = active ? '#FF9500' : '#D1D1D6';
       });
     });
   });
@@ -683,12 +713,16 @@ function openSessionModal(dateStr) {
   bindMultiSelect('cycle-type-selector', 'ctype', dateStr, 'cycleTypes', '#FF9500', 'rgba(255,149,0,0.12)');
 
   // Cycle rating
+  let cycleRatingCurrent = (Store.getCheckIn(dateStr) || {}).cycleRating || 0;
   document.getElementById('cycle-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const rating = parseInt(btn.dataset.rating);
-      saveSessionField(dateStr, 'cycleRating', rating);
+      const tapped = parseInt(btn.dataset.rating);
+      cycleRatingCurrent = cycleRatingCurrent === tapped ? 0 : tapped;
+      saveSessionField(dateStr, 'cycleRating', cycleRatingCurrent);
       document.getElementById('cycle-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
-        b.style.background = rating >= parseInt(b.dataset.rating) ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        const active = cycleRatingCurrent >= parseInt(b.dataset.rating);
+        b.style.background = active ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        b.style.color = active ? '#FF9500' : '#D1D1D6';
       });
     });
   });
@@ -706,12 +740,16 @@ function openSessionModal(dateStr) {
   });
 
   // Golf rating
+  let golfRatingCurrent = (Store.getCheckIn(dateStr) || {}).golfRating || 0;
   document.getElementById('golf-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const rating = parseInt(btn.dataset.rating);
-      saveSessionField(dateStr, 'golfRating', rating);
+      const tapped = parseInt(btn.dataset.rating);
+      golfRatingCurrent = golfRatingCurrent === tapped ? 0 : tapped;
+      saveSessionField(dateStr, 'golfRating', golfRatingCurrent);
       document.getElementById('golf-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
-        b.style.background = rating >= parseInt(b.dataset.rating) ? 'rgba(52,199,89,0.12)' : '#F9F9F9';
+        const active = golfRatingCurrent >= parseInt(b.dataset.rating);
+        b.style.background = active ? 'rgba(52,199,89,0.12)' : '#F9F9F9';
+        b.style.color = active ? '#34C759' : '#D1D1D6';
       });
     });
   });
@@ -726,12 +764,16 @@ function openSessionModal(dateStr) {
   });
   document.getElementById('smart-notes-input')?.addEventListener('input', () => saveSessionField(dateStr, 'smartNotes', document.getElementById('smart-notes-input')?.value || ''));
 
+  let smartRatingCurrent = (Store.getCheckIn(dateStr) || {}).smartRating || 0;
   document.getElementById('smart-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const rating = parseInt(btn.dataset.rating);
-      saveSessionField(dateStr, 'smartRating', rating);
+      const tapped = parseInt(btn.dataset.rating);
+      smartRatingCurrent = smartRatingCurrent === tapped ? 0 : tapped;
+      saveSessionField(dateStr, 'smartRating', smartRatingCurrent);
       document.getElementById('smart-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(b => {
-        b.style.background = rating >= parseInt(b.dataset.rating) ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        const active = smartRatingCurrent >= parseInt(b.dataset.rating);
+        b.style.background = active ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
+        b.style.color = active ? '#FF9500' : '#D1D1D6';
       });
     });
   });
@@ -795,10 +837,14 @@ function openSessionModal(dateStr) {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('gym-copy-btn');
-      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy for Bevel'; }, 2000); }
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy to Bevel'; }, 2000); }
     });
   });
 
+  document.getElementById('smart-cardio-duration')?.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) saveSessionField(dateStr, 'smartCardioDuration', v);
+  });
   document.getElementById('smart-cardio-distance')?.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     if (!isNaN(v)) saveSessionField(dateStr, 'smartCardioDistance', v);

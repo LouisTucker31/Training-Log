@@ -95,6 +95,7 @@ const ProfilePage = (() => {
                 value="${profile.name || ''}"
                 autocomplete="off"
                 autocorrect="off"
+                autocapitalize="words"
                 spellcheck="false"
               />
             </div>

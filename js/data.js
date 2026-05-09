@@ -234,7 +234,7 @@ const TrainingData = (() => {
   // ─── Smart workout → session object ──────────────────────
 
   function smartWorkoutToSession(w) {
-    const base = { smart: true, smartId: w.id, name: w.name, tag: w.tag || '', subtitle: w.subtitle || '', recurrence: w.recurrence, recurrenceEveryDays: w.recurrenceEveryDays };
+    const base = { smart: true, smartId: w.id, name: w.name, tag: w.tag || '', tagColour: w.tagColour || null, subtitle: w.subtitle || '', recurrence: w.recurrence, recurrenceEveryDays: w.recurrenceEveryDays };
     switch (w.sessionType) {
       case 'gym':     return { ...base, type: 'smart-gym',    label: w.name || 'Gym', details: w.details || {} };
       case 'sports':  return { ...base, type: 'smart-sports', label: w.name || 'Sports', details: w.details || {} };

@@ -146,6 +146,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
           <div style="margin-top:0;">
             <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Workout Name</div>
             <input id="add-wkt-name" type="text" placeholder="e.g. Morning Run" value="${name}"
+              autocapitalize="words"
               style="width:100%;padding:12px 16px;background:#F9F9F9;border:none;
               border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -154,6 +155,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
           <div style="margin-top:12px;">
             <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tag <span style="font-weight:400;text-transform:none;letter-spacing:0;">(shown on tile)</span></div>
             <input id="add-wkt-tag" type="text" placeholder="${typePlaceholder}" value="${tagVal}"
+              autocapitalize="words"
               style="width:100%;padding:12px 16px;background:#F9F9F9;border:none;
               border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -162,6 +164,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
           <div style="margin-top:12px;">
             <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Subtitle <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></div>
             <input id="add-wkt-subtitle" type="text" placeholder="e.g. Upper Body Focus" value="${sub}"
+              autocapitalize="words"
               style="width:100%;padding:12px 16px;background:#F9F9F9;border:none;
               border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);
               font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -181,7 +184,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
               ${[
                 { val: 'none',   label: 'None'         },
                 { val: 'weekly', label: 'Every Week'   },
-                { val: 'custom', label: 'Every X Days' },
+                { val: 'custom', label: 'Custom Interval' },
               ].map((opt, i, arr) => `
                 <label style="display:flex;align-items:center;justify-content:space-between;
                   padding:12px 16px;cursor:pointer;
@@ -288,6 +291,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
           <div style="margin-top:16px;">
             <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Notes</div>
             <textarea id="add-det-notes" placeholder="Any notes about this workout..."
+              autocapitalize="sentences"
               style="width:100%;min-height:80px;padding:12px 16px;background:#F9F9F9;border:none;border-radius:12px;
               box-shadow:0 2px 8px rgba(0,0,0,0.08);font-family:-apple-system,BlinkMacSystemFont,sans-serif;
               font-size:15px;color:#000;resize:none;outline:none;-webkit-appearance:none;box-sizing:border-box;"
@@ -309,6 +313,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
     return `
       <div class="add-ex-row" data-idx="${idx}" style="display:flex;gap:8px;align-items:center;">
         <input class="add-ex-name" type="text" placeholder="Exercise name" value="${name}"
+          autocapitalize="words"
           style="flex:1;padding:12px 14px;background:#F9F9F9;border:none;border-radius:10px;
           box-shadow:0 2px 8px rgba(0,0,0,0.08);font-family:-apple-system,BlinkMacSystemFont,sans-serif;
           font-size:15px;color:#000;outline:none;box-sizing:border-box;"/>
@@ -365,13 +370,29 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
     };
   }
 
+  function assignTagColour(tag, existingColour) {
+    const PALETTE = ['#007AFF','#FF3B30','#FF9500','#34C759','#AF52DE','#FF9F0A','#5AC8FA'];
+    if (existingColour) return existingColour;
+    const tagKey = (tag || '').toLowerCase();
+    const all    = Store.getAllSmartWorkouts();
+    // Reuse colour if this tag already has one
+    for (const w of all) {
+      if ((w.tag || '').toLowerCase() === tagKey && w.tagColour) return w.tagColour;
+    }
+    // Pick next unused colour from palette
+    const used = new Set(all.map(w => w.tagColour).filter(Boolean));
+    return PALETTE.find(c => !used.has(c)) || PALETTE[all.length % PALETTE.length];
+  }
+
   function commitSave(p2, det, mode) {
     if (!isEdit || mode === 'all') {
+      const tagColour = assignTagColour(p2.tag, existingWorkout?.tagColour);
       const workout = {
         id:                  (existingWorkout && existingWorkout.id) || `sw_${Date.now()}`,
         sessionType:         selectedType,
         name:                p2.name,
         tag:                 p2.tag,
+        tagColour,
         subtitle:            p2.subtitle,
         startDate:           p2.startDate,
         recurrence:          p2.recurrence,
@@ -382,12 +403,14 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
       };
       Store.saveSmartWorkout(workout);
     } else if (mode === 'this') {
+      const tagColour = assignTagColour(p2.tag, existingWorkout?.tagColour);
       Store.deleteSmartWorkoutOnDate(existingWorkout.id, dateStr, 'this');
       Store.saveSmartWorkout({
         id:          `sw_${Date.now()}`,
         sessionType: selectedType,
         name:        p2.name,
         tag:         p2.tag,
+        tagColour,
         subtitle:    p2.subtitle,
         startDate:   dateStr,
         recurrence:  'none',
@@ -396,12 +419,14 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
         endDate:     null,
       });
     } else if (mode === 'forward') {
+      const tagColour = assignTagColour(p2.tag, existingWorkout?.tagColour);
       Store.deleteSmartWorkoutOnDate(existingWorkout.id, dateStr, 'forward');
       Store.saveSmartWorkout({
         id:                  `sw_${Date.now()}`,
         sessionType:         selectedType,
         name:                p2.name,
         tag:                 p2.tag,
+        tagColour,
         subtitle:            p2.subtitle,
         startDate:           dateStr,
         recurrence:          p2.recurrence,
@@ -499,22 +524,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
 
     if (page === 3) {
       if (selectedType === 'cardio') {
-        const autoCalc = () => {
-          const durEl  = pageEl.querySelector('#add-det-duration');
-          const distEl = pageEl.querySelector('#add-det-distance');
-          const spdEl  = pageEl.querySelector('#add-det-pace');
-          const dur    = parseFloat(durEl?.value)  || 0;
-          const dist   = parseFloat(distEl?.value) || 0;
-          const spd    = parseFloat(spdEl?.value)  || 0;
-          const filled = [dur > 0, dist > 0, spd > 0].filter(Boolean).length;
-          if (filled !== 2) return;
-          if (!dur  && dist && spd)  { durEl.value  = (dist / spd * 60).toFixed(1); }
-          if (!dist && dur  && spd)  { distEl.value = (spd * dur / 60).toFixed(2);  }
-          if (!spd  && dur  && dist) { spdEl.value  = (dist / (dur / 60)).toFixed(1); }
-        };
-        pageEl.querySelector('#add-det-duration')?.addEventListener('blur', autoCalc);
-        pageEl.querySelector('#add-det-distance')?.addEventListener('blur', autoCalc);
-        pageEl.querySelector('#add-det-pace')?.addEventListener('blur', autoCalc);
+        // No auto-calc — fields are independent planned targets
       }
 
       pageEl.querySelector('#add-wkt-add-exercise')?.addEventListener('click', () => {

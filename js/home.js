@@ -120,10 +120,14 @@ const HomePage = (() => {
     const detail = sessionDetail(session);
     const isRest = session.type === 'rest' || session.type === 'none';
 
+    const badgeStyle = session.tagColour
+      ? `style="color:${session.tagColour};background:${session.tagColour}1A;"`
+      : '';
+
     return `
       <div class="home-session-card ${isRest ? 'is-rest' : ''}" id="home-session-card">
         <div class="home-session-left">
-          <span class="home-session-badge type-${session.type}">${badge}</span>
+          <span class="home-session-badge type-${session.type}" ${badgeStyle}>${badge}</span>
           <div class="home-session-info">
             <div class="home-session-title">${title}</div>
             <div class="home-session-detail">${detail}</div>

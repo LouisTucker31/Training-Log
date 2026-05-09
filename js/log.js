@@ -170,7 +170,7 @@ const LogModal = (() => {
           const badge  = (s.tag || s.type).toUpperCase().slice(0, 7);
           const title  = s.name || s.label || 'Session';
           const sub    = s.subtitle || s.note || '';
-          const colour = sessionTypeColour[s.type] || '#8E8E93';
+          const colour = s.tagColour || sessionTypeColour[s.type] || '#8E8E93';
           return `
             <div class="welcome-session-row">
               <span class="welcome-session-badge" style="color:${colour};background:${colour}18">${badge}</span>

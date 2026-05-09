@@ -259,6 +259,12 @@ const InsightsPage = (() => {
     const SMART_COLOURS = ['#007AFF','#FF3B30','#FF9500','#34C759','#AF52DE','#FF9F0A','#5AC8FA'];
     const smartTagMap   = {}; // tagKey → { display, colour, isCardio }
 
+    // Build tag→colour lookup from stored workouts (uses saved tagColour if present)
+    const storedTagColours = {};
+    Store.getAllSmartWorkouts().forEach(w => {
+      if (w.tag && w.tagColour) storedTagColours[w.tag.toLowerCase()] = w.tagColour;
+    });
+
     const data = weeks.map(dates => {
       const entry = { gym: 0, bjj: 0, golf: 0, miles: 0 };
       dates.forEach(dateStr => {
@@ -272,8 +278,9 @@ const InsightsPage = (() => {
           const display  = session.tag || (sType.charAt(0).toUpperCase() + sType.slice(1));
           const isCardio = sType === 'cardio';
           if (!smartTagMap[tagKey]) {
-            const idx = Object.keys(smartTagMap).length;
-            smartTagMap[tagKey] = { display, colour: SMART_COLOURS[idx % SMART_COLOURS.length], isCardio };
+            const idx    = Object.keys(smartTagMap).length;
+            const colour = storedTagColours[tagKey] || SMART_COLOURS[idx % SMART_COLOURS.length];
+            smartTagMap[tagKey] = { display, colour, isCardio };
           }
           if (!entry[tagKey]) entry[tagKey] = 0;
           entry[tagKey] += isCardio ? (session.details?.distance || 1) : 1;
