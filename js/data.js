@@ -6,35 +6,36 @@ const TrainingData = (() => {
 
   // ─── Hypertrophy Workouts ─────────────────────────────────
 
+  // sets is the green (full) value; amber = -1 per number, red = -2 per number
   const WORKOUTS = {
     push: {
       label: 'Chest & Shoulders',
       exercises: [
-        { name: 'Incline Smith Machine',      sets: { green: '5-6', amber: '4-5', red: '3-5' } },
-        { name: 'Machine Chest Fly',          sets: { green: '5-6', amber: '4-5', red: '3-5' } },
-        { name: 'Dumbbell Lateral Raise',     sets: { green: '4-5', amber: '4-5', red: '3-4' } },
-        { name: 'Machine Lateral Raise',      sets: { green: '4-5', amber: '3-4', red: '3-4' } },
-        { name: 'Reverse Pec Dec',            sets: { green: '4-5', amber: '3-4', red: '2-3' } },
+        { name: 'Incline Smith Machine',      sets: '5-6' },
+        { name: 'Machine Chest Fly',          sets: '5-6' },
+        { name: 'Dumbbell Lateral Raise',     sets: '4-5' },
+        { name: 'Machine Lateral Raise',      sets: '4-5' },
+        { name: 'Reverse Pec Dec',            sets: '4-5' },
       ]
     },
     legs: {
       label: 'Quads & Hamstrings',
       exercises: [
-        { name: 'Machine Leg Extension',      sets: { green: '4-5', amber: '3-4', red: '2-3' } },
-        { name: 'Plate Loaded Leg Press',     sets: { green: '4-5', amber: '3-4', red: '2-3' } },
-        { name: 'Lying Hamstring Curl',       sets: { green: '4-5', amber: '3-4', red: '2-3' } },
-        { name: 'Seated Calf Raise',          sets: { green: '5-6', amber: '4-5', red: '3-4' } },
-        { name: 'Hanging Knee Raises',        sets: { green: '5-6', amber: '4-5', red: '3-4' } },
+        { name: 'Machine Leg Extension',      sets: '4-5' },
+        { name: 'Plate Loaded Leg Press',     sets: '4-5' },
+        { name: 'Lying Hamstring Curl',       sets: '4-5' },
+        { name: 'Seated Calf Raise',          sets: '5-6' },
+        { name: 'Hanging Knee Raises',        sets: '5-6' },
       ]
     },
     pull: {
       label: 'Back & Arms',
       exercises: [
-        { name: 'Lat Grip Pull Down',         sets: { green: '4-5', amber: '4-5', red: '3-4' } },
-        { name: 'Machine Low Row',            sets: { green: '4-5', amber: '3-4', red: '3-4' } },
-        { name: 'Cable Pull Over',            sets: { green: '4-5', amber: '3-4', red: '2-3' } },
-        { name: 'Alternating Dumbbell Curl',  sets: { green: '4-5', amber: '3-4', red: '2-3' } },
-        { name: 'Cable Tricep Pushdown',      sets: { green: '4-5', amber: '3-4', red: '2-3' } },
+        { name: 'Lat Grip Pull Down',         sets: '4-5' },
+        { name: 'Machine Low Row',            sets: '4-5' },
+        { name: 'Cable Pull Over',            sets: '4-5' },
+        { name: 'Alternating Dumbbell Curl',  sets: '4-5' },
+        { name: 'Cable Tricep Pushdown',      sets: '4-5' },
       ]
     }
   };
@@ -157,9 +158,15 @@ const TrainingData = (() => {
     }
   }
 
+  function adjustSets(greenSets, reduction) {
+    if (!reduction) return greenSets;
+    return greenSets.split('-').map(n => Math.max(1, parseInt(n) - reduction)).join('-');
+  }
+
   function getHypertrophySession(type, ragScore) {
-    const volume = ragScore ? ragScore.toLowerCase() : 'green';
-    const workout = WORKOUTS[type];
+    const volume   = ragScore ? ragScore.toLowerCase() : 'green';
+    const reduction = volume === 'amber' ? 1 : volume === 'red' ? 2 : 0;
+    const workout  = WORKOUTS[type];
     return {
       type:      'hypertrophy',
       subtype:   type,
@@ -167,7 +174,7 @@ const TrainingData = (() => {
       volume,
       exercises: workout.exercises.map(e => ({
         name: e.name,
-        sets: e.sets[volume],
+        sets: adjustSets(e.sets, reduction),
       })),
     };
   }

@@ -242,13 +242,10 @@
   font-size: var(--text-subhead);
   color: var(--label-secondary);
   text-align: right;
+  text-align-last: right;
   padding: 10px 0;
+  margin-left: auto;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
-  direction: rtl;
-}
-
-.settings-row-select option {
-  direction: ltr;
 }

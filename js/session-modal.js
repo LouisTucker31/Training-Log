@@ -8,7 +8,109 @@ function saveSessionField(dateStr, field, value) {
   const entry = all[dateStr] || { date: dateStr };
   entry[field] = value;
   all[dateStr] = entry;
-  try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+  Store.saveAllCheckIns(all);
+}
+
+// Toggle a value in a multi-select array field and persist
+function toggleSessionMultiSelect(dateStr, field, value) {
+  const all   = Store.getAllCheckIns();
+  const entry = all[dateStr] || { date: dateStr };
+  let arr = Array.isArray(entry[field]) ? [...entry[field]] : [];
+  arr = arr.includes(value) ? arr.filter(x => x !== value) : [...arr, value];
+  entry[field] = arr;
+  all[dateStr] = entry;
+  Store.saveAllCheckIns(all);
+  return arr;
+}
+
+// Bind a multi-select type button group
+// dataAttr: the dataset attribute name on each button (e.g. 'type', 'gtype', 'ctype')
+// field: the checkin field to save to (e.g. 'bjjTypes')
+// selColor: the selected color for text (e.g. '#007AFF')
+// selBg: the selected background (e.g. 'rgba(0,122,255,0.12)')
+function bindMultiSelect(selectorId, dataAttr, dateStr, field, selColor, selBg) {
+  const container = document.getElementById(selectorId);
+  if (!container) return;
+  container.querySelectorAll('.session-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selected = toggleSessionMultiSelect(dateStr, field, btn.dataset[dataAttr]);
+      container.querySelectorAll('.session-type-btn').forEach(b => {
+        const on = selected.includes(b.dataset[dataAttr]);
+        b.style.background = on ? selBg    : '#F9F9F9';
+        b.style.fontWeight = on ? '600'    : '400';
+        b.style.color      = on ? selColor : '#000';
+      });
+    });
+  });
+}
+
+// Build expandable exercise rows with load/reps inputs (shared by hypertrophy + smart-gym)
+function buildGymExerciseRowsHTML(exercises, savedSets, prevSets, rag, containerId) {
+  const ragReduce = rag === 'red' ? 2 : rag === 'amber' ? 1 : 0;
+  return `
+    <div id="${containerId}" style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      ${exercises.map((e, exIdx) => {
+        const numSets   = Math.max(1, parseInt(e.sets) - ragReduce) || 3;
+        const exKey     = e.name;
+        const savedRows = (savedSets[exKey] && savedSets[exKey].length) ? savedSets[exKey] : Array.from({ length: numSets }, () => ({ reps: '', load: '' }));
+        const prevRows  = (prevSets[exKey]  && prevSets[exKey].length)  ? prevSets[exKey]  : [];
+        const setRowsHTML = Array.from({ length: numSets }, (_, s) => {
+          const row     = savedRows[s] || { reps: '', load: '' };
+          const prevRow = prevRows[s]  || { reps: '', load: '' };
+          const loadPH  = row.load ? '' : (prevRow.load || '—');
+          const repsPH  = row.reps ? '' : (prevRow.reps || '—');
+          return `
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;padding:8px 12px;border-top:0.5px solid #E5E5EA;box-sizing:border-box;">
+              <span style="font-size:13px;color:#AEAEB2;font-weight:600;text-align:center;">${s + 1}</span>
+              <div style="display:flex;align-items:center;background:#fff;border-radius:8px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);min-width:0;">
+                <input class="gym-set-load" type="number" inputmode="decimal" placeholder="${loadPH}" value="${row.load}"
+                  data-ex="${exIdx}" data-set="${s}"
+                  style="flex:1;border:none;background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;color:#000;outline:none;text-align:center;min-width:0;width:0;"/>
+                <span style="font-size:11px;color:#AEAEB2;flex-shrink:0;margin-left:2px;">${Units.weightUnit()}</span>
+              </div>
+              <div style="display:flex;align-items:center;background:#fff;border-radius:8px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);min-width:0;">
+                <input class="gym-set-reps" type="number" inputmode="numeric" placeholder="${repsPH}" value="${row.reps}"
+                  data-ex="${exIdx}" data-set="${s}"
+                  style="flex:1;border:none;background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;color:#000;outline:none;text-align:center;min-width:0;width:0;"/>
+                <span style="font-size:11px;color:#AEAEB2;flex-shrink:0;margin-left:2px;">reps</span>
+              </div>
+            </div>`;
+        }).join('');
+        const notLast = exIdx < exercises.length - 1;
+        return `
+          <div ${notLast ? 'style="border-bottom:0.5px solid #E5E5EA;"' : ''}>
+            <div class="gym-ex-header" data-ex-idx="${exIdx}"
+              style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;">
+              <span style="font-size:15px;color:#000;font-weight:500;">${e.name}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:13px;color:#8E8E93;">${numSets} set${numSets !== 1 ? 's' : ''}${ragReduce > 0 ? ' ↓' : ''}</span>
+                <span class="gym-ex-chevron" style="font-size:16px;color:#C7C7CC;transition:transform 0.2s;">›</span>
+              </div>
+            </div>
+            <div class="gym-ex-sets" style="display:none;">
+              <div style="display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:6px;padding:6px 12px 0;border-top:0.5px solid #E5E5EA;box-sizing:border-box;">
+                <span></span>
+                <span style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.3px;text-align:center;padding:4px 0;">Load</span>
+                <span style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.3px;text-align:center;padding:4px 0;">Reps</span>
+              </div>
+              ${setRowsHTML}
+              <div style="height:8px;"></div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// Format saved gym sets as plain text for clipboard (skips empty sets)
+function formatGymSetsForClipboard(exercises, savedSets) {
+  return exercises.map(e => {
+    const rows = savedSets[e.name] || [];
+    const setParts = rows
+      .filter(r => r.load || r.reps)
+      .map(r => `${r.load || '?'}x${r.reps || '?'}`);
+    if (!setParts.length) return null;
+    return `${e.name}: ${setParts.join(', ')}`;
+  }).filter(Boolean).join('\n');
 }
 
 function detailRow(label, value) {
@@ -28,6 +130,7 @@ function closeSessionModal() {
     modal.style.transform  = 'translateY(100%)';
   }
   backdrop.classList.remove('open');
+  unlockBodyScroll();
   setTimeout(() => backdrop.remove(), 400);
 }
 
@@ -45,10 +148,31 @@ function buildModalBody(session, dateStr) {
   let html = '';
 
   if (session.type === 'hypertrophy') {
-    const vol      = session.volume || 'green';
-    const labels   = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
-    const gymTypes = Array.isArray(ci.gymTypes) ? ci.gymTypes : [];
+    const vol         = session.volume || 'green';
+    const labels      = { green: 'Green Volume', amber: 'Amber Volume', red: 'Red Volume' };
+    const gymTypes    = Array.isArray(ci.gymTypes) ? ci.gymTypes : [];
     const gymDuration = ci.gymDuration ?? 60;
+    const savedSets   = ci.gymSets || {};
+
+    // Look back up to 12 weeks for the same workout subtype (push/legs/pull)
+    let prevSets = {};
+    const allCIs = Store.getAllCheckIns();
+    const profile = Store.getProfile();
+    const target  = new Date(dateStr + 'T00:00:00');
+    for (let i = 1; i <= 84; i++) {
+      const prev    = new Date(target);
+      prev.setDate(target.getDate() - i);
+      const prevStr = `${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}-${String(prev.getDate()).padStart(2,'0')}`;
+      const prevCI  = allCIs[prevStr];
+      if (prevCI?.gymSets) {
+        const prevSess = TrainingData.getSessionForDate(prevStr, profile.programmeStart, prevCI.rag || 'green', profile.programme, profile.programmeLengthWeeks);
+        if (prevSess.type === 'hypertrophy' && prevSess.subtype === session.subtype) {
+          prevSets = prevCI.gymSets;
+          break;
+        }
+      }
+    }
+
     html += `
       <div style="background:#F9F9F9;border-radius:12px;padding:12px 16px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:15px;color:#000;">Duration</span>
@@ -78,16 +202,13 @@ function buildModalBody(session, dateStr) {
       </div>
       <div style="margin-top:16px;">
         <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${labels[vol]}</div>
-        <div style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-          ${session.exercises.map((e, i) => `
-            <div style="
-              display:flex;justify-content:space-between;align-items:center;
-              padding:12px 16px;
-              ${i < session.exercises.length - 1 ? 'border-bottom:0.5px solid #E5E5EA;' : ''}
-            ">
-              <span style="font-size:15px;color:#000;">${e.name}</span>
-              <span style="font-size:15px;color:#8E8E93;font-weight:500;">${e.sets} sets</span>
-            </div>`).join('')}
+        ${buildGymExerciseRowsHTML(session.exercises, savedSets, prevSets, vol, 'hypertrophy-exercises')}
+        <div style="margin-top:8px;text-align:right;">
+          <button id="gym-copy-btn"
+            style="background:none;border:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+            font-size:13px;color:#8E8E93;cursor:pointer;padding:4px 0;">
+            Copy for Bevel
+          </button>
         </div>
       </div>
       <div style="margin-top:16px;">
@@ -264,58 +385,13 @@ function buildModalBody(session, dateStr) {
         html += `
           <div style="margin-top:16px;">
             <div style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Exercises</div>
-            <div id="smart-gym-exercises" style="background:#F9F9F9;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-              ${det.exercises.map((e, exIdx) => {
-                const baseSets  = parseInt(e.sets) || 3;
-                const ragReduce = ci.rag === 'red' ? 2 : ci.rag === 'amber' ? 1 : 0;
-                const numSets   = prevSmartCI ? Math.max(1, baseSets - ragReduce) : baseSets;
-                const exKey     = e.name;
-                const savedRows = (savedSets[exKey] && savedSets[exKey].length) ? savedSets[exKey] : Array.from({ length: numSets }, () => ({ reps: '', load: '' }));
-                const prevRows  = (prevSets[exKey]  && prevSets[exKey].length)  ? prevSets[exKey]  : [];
-                const setRowsHTML = Array.from({ length: numSets }, (_, s) => {
-                  const row     = savedRows[s] || { reps: '', load: '' };
-                  const prevRow = prevRows[s]  || { reps: '', load: '' };
-                  const loadPH  = row.load ? '' : (prevRow.load || '—');
-                  const repsPH  = row.reps ? '' : (prevRow.reps || '—');
-                  return `
-                    <div style="display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;padding:8px 12px;border-top:0.5px solid #E5E5EA;box-sizing:border-box;">
-                      <span style="font-size:13px;color:#AEAEB2;font-weight:600;text-align:center;">${s + 1}</span>
-                      <div style="display:flex;align-items:center;background:#fff;border-radius:8px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);min-width:0;">
-                        <input class="gym-set-load" type="number" inputmode="decimal" placeholder="${loadPH}" value="${row.load}"
-                          data-ex="${exIdx}" data-set="${s}"
-                          style="flex:1;border:none;background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;color:#000;outline:none;text-align:center;min-width:0;width:0;"/>
-                        <span style="font-size:11px;color:#AEAEB2;flex-shrink:0;margin-left:2px;">${Units.weightUnit()}</span>
-                      </div>
-                      <div style="display:flex;align-items:center;background:#fff;border-radius:8px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);min-width:0;">
-                        <input class="gym-set-reps" type="number" inputmode="numeric" placeholder="${repsPH}" value="${row.reps}"
-                          data-ex="${exIdx}" data-set="${s}"
-                          style="flex:1;border:none;background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;color:#000;outline:none;text-align:center;min-width:0;width:0;"/>
-                        <span style="font-size:11px;color:#AEAEB2;flex-shrink:0;margin-left:2px;">reps</span>
-                      </div>
-                    </div>`;
-                }).join('');
-                const notLast = exIdx < det.exercises.length - 1;
-                return `
-                  <div ${notLast ? 'style="border-bottom:0.5px solid #E5E5EA;"' : ''}>
-                    <div class="gym-ex-header" data-ex-idx="${exIdx}"
-                      style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;">
-                      <span style="font-size:15px;color:#000;font-weight:500;">${e.name}</span>
-                      <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:13px;color:#8E8E93;">${numSets} set${numSets !== 1 ? 's' : ''}${ragReduce > 0 ? ' ↓' : ''}</span>
-                        <span class="gym-ex-chevron" style="font-size:16px;color:#C7C7CC;transition:transform 0.2s;">›</span>
-                      </div>
-                    </div>
-                    <div class="gym-ex-sets" style="display:none;">
-                      <div style="display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:6px;padding:6px 12px 0;border-top:0.5px solid #E5E5EA;box-sizing:border-box;">
-                        <span></span>
-                        <span style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.3px;text-align:center;padding:4px 0;">Load</span>
-                        <span style="font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.3px;text-align:center;padding:4px 0;">Reps</span>
-                      </div>
-                      ${setRowsHTML}
-                      <div style="height:8px;"></div>
-                    </div>
-                  </div>`;
-              }).join('')}
+            ${buildGymExerciseRowsHTML(det.exercises, savedSets, prevSets, ci.rag || 'green', 'smart-gym-exercises')}
+            <div style="margin-top:8px;text-align:right;">
+              <button id="gym-copy-btn"
+                style="background:none;border:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+                font-size:13px;color:#8E8E93;cursor:pointer;padding:4px 0;">
+                Copy for Bevel
+              </button>
             </div>
           </div>`;
       }
@@ -514,7 +590,7 @@ function openSessionModal(dateStr) {
       <div class="modal-scroll-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 var(--space-md) 0;overscroll-behavior:contain;">
         ${bodyHTML}
         ${!isFuture && session.type !== 'rest' ? `
-        <div style="padding:var(--space-md) 0 100px;">
+        <div style="padding:var(--space-md) 0 calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg) + 12px);">
           <button class="btn ${completed ? 'btn-secondary' : 'btn-primary'}"
             id="session-modal-complete-btn"
             data-date="${dateStr}"
@@ -530,6 +606,7 @@ function openSessionModal(dateStr) {
   container.appendChild(backdrop);
 
   requestAnimationFrame(() => { backdrop.classList.add('open'); });
+  lockBodyScroll();
 
   // Close handlers
   backdrop.addEventListener('click', e => {
@@ -538,59 +615,17 @@ function openSessionModal(dateStr) {
   document.getElementById('session-modal-close').addEventListener('click', closeSessionModal);
 
   // Drag to dismiss
-  const sessionModal  = document.getElementById('session-modal');
-  const sessionHandle = sessionModal?.querySelector('.modal-handle');
-  if (sessionModal && sessionHandle) {
-    let startY = 0, lastY = 0, dragging = false;
-    sessionHandle.addEventListener('touchstart', e => {
-      startY = e.touches[0].clientY; lastY = startY; dragging = true;
-      sessionModal.style.transition = 'none';
-      e.preventDefault();
-    }, { passive: false });
-    sessionHandle.addEventListener('touchmove', e => {
-      if (!dragging) return;
-      lastY = e.touches[0].clientY;
-      sessionModal.style.transform = `translateY(${Math.max(0, lastY - startY)}px)`;
-      e.preventDefault();
-    }, { passive: false });
-    sessionHandle.addEventListener('touchend', () => {
-      if (!dragging) return;
-      dragging = false;
-      sessionModal.style.transition = '';
-      if (Math.max(0, lastY - startY) > 120) closeSessionModal();
-      else sessionModal.style.transform = 'translateY(0)';
-    });
-  }
+  const sessionModal = document.getElementById('session-modal');
+  const scrollBody   = sessionModal?.querySelector('.modal-scroll-body');
+  if (sessionModal) attachModalDrag(sessionModal, scrollBody, closeSessionModal);
 
   // Auto-save notes
-  document.getElementById('session-notes-input')?.addEventListener('input', () => {
-    const input = document.getElementById('session-notes-input');
-    if (!input) return;
-    const all   = Store.getAllCheckIns();
-    const entry = all[dateStr] || { date: dateStr };
-    entry.sessionNotes = input.value;
-    all[dateStr] = entry;
-    try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+  document.getElementById('session-notes-input')?.addEventListener('input', e => {
+    saveSessionField(dateStr, 'sessionNotes', e.target.value);
   });
 
   // BJJ type — multi-select
-  document.getElementById('bjj-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const all   = Store.getAllCheckIns();
-      const entry = all[dateStr] || { date: dateStr };
-      let types   = Array.isArray(entry.bjjTypes) ? [...entry.bjjTypes] : [];
-      const t     = btn.dataset.type;
-      types = types.includes(t) ? types.filter(x => x !== t) : [...types, t];
-      entry.bjjTypes = types; all[dateStr] = entry;
-      try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
-      document.getElementById('bjj-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
-        const sel = types.includes(b.dataset.type);
-        b.style.background = sel ? 'rgba(0,122,255,0.12)' : '#F9F9F9';
-        b.style.fontWeight = sel ? '600' : '400';
-        b.style.color      = sel ? '#007AFF' : '#000';
-      });
-    });
-  });
+  bindMultiSelect('bjj-type-selector', 'type', dateStr, 'bjjTypes', '#007AFF', 'rgba(0,122,255,0.12)');
 
   // BJJ rating
   document.getElementById('bjj-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
@@ -604,23 +639,7 @@ function openSessionModal(dateStr) {
   });
 
   // Gym type — multi-select
-  document.getElementById('gym-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const all   = Store.getAllCheckIns();
-      const entry = all[dateStr] || { date: dateStr };
-      let types   = Array.isArray(entry.gymTypes) ? [...entry.gymTypes] : [];
-      const t     = btn.dataset.gtype;
-      types = types.includes(t) ? types.filter(x => x !== t) : [...types, t];
-      entry.gymTypes = types; all[dateStr] = entry;
-      try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
-      document.getElementById('gym-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
-        const sel = types.includes(b.dataset.gtype);
-        b.style.background = sel ? 'rgba(0,122,255,0.12)' : '#F9F9F9';
-        b.style.fontWeight = sel ? '600' : '400';
-        b.style.color      = sel ? '#007AFF' : '#000';
-      });
-    });
-  });
+  bindMultiSelect('gym-type-selector', 'gtype', dateStr, 'gymTypes', '#007AFF', 'rgba(0,122,255,0.12)');
 
   // Gym rating
   document.getElementById('gym-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
@@ -634,23 +653,7 @@ function openSessionModal(dateStr) {
   });
 
   // Cycle type — multi-select
-  document.getElementById('cycle-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const all   = Store.getAllCheckIns();
-      const entry = all[dateStr] || { date: dateStr };
-      let types   = Array.isArray(entry.cycleTypes) ? [...entry.cycleTypes] : [];
-      const t     = btn.dataset.ctype;
-      types = types.includes(t) ? types.filter(x => x !== t) : [...types, t];
-      entry.cycleTypes = types; all[dateStr] = entry;
-      try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
-      document.getElementById('cycle-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
-        const sel = types.includes(b.dataset.ctype);
-        b.style.background = sel ? 'rgba(255,149,0,0.12)' : '#F9F9F9';
-        b.style.fontWeight = sel ? '600' : '400';
-        b.style.color      = sel ? '#FF9500' : '#000';
-      });
-    });
-  });
+  bindMultiSelect('cycle-type-selector', 'ctype', dateStr, 'cycleTypes', '#FF9500', 'rgba(255,149,0,0.12)');
 
   // Cycle rating
   document.getElementById('cycle-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
@@ -664,11 +667,16 @@ function openSessionModal(dateStr) {
   });
 
   // Duration inputs
-  document.getElementById('bjj-duration')?.addEventListener('input',   e => saveSessionField(dateStr, 'bjjDuration',   parseFloat(e.target.value) || 60));
-  document.getElementById('gym-duration')?.addEventListener('input',   e => saveSessionField(dateStr, 'gymDuration',   parseFloat(e.target.value) || 60));
-  document.getElementById('cycle-duration')?.addEventListener('input', e => saveSessionField(dateStr, 'cycleDuration', parseFloat(e.target.value) || 60));
-  document.getElementById('golf-duration')?.addEventListener('input',  e => saveSessionField(dateStr, 'golfDuration',  parseFloat(e.target.value) || 60));
-  document.getElementById('cycle-pace')?.addEventListener('input',     e => saveSessionField(dateStr, 'cyclePace', e.target.value));
+  ['bjj-duration','gym-duration','cycle-duration','golf-duration'].forEach(id => {
+    const fieldMap = { 'bjj-duration': 'bjjDuration', 'gym-duration': 'gymDuration', 'cycle-duration': 'cycleDuration', 'golf-duration': 'golfDuration' };
+    document.getElementById(id)?.addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v > 0) saveSessionField(dateStr, fieldMap[id], v);
+    });
+  });
+  document.getElementById('cycle-pace')?.addEventListener('input', e => {
+    if (e.target.value !== '') saveSessionField(dateStr, 'cyclePace', e.target.value);
+  });
 
   // Golf rating
   document.getElementById('golf-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
@@ -682,26 +690,13 @@ function openSessionModal(dateStr) {
   });
 
   // Golf type — multi-select
-  document.getElementById('golf-type-selector')?.querySelectorAll('.session-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const all   = Store.getAllCheckIns();
-      const entry = all[dateStr] || { date: dateStr };
-      let types   = Array.isArray(entry.golfTypes) ? [...entry.golfTypes] : [];
-      const t     = btn.dataset.gtype;
-      types = types.includes(t) ? types.filter(x => x !== t) : [...types, t];
-      entry.golfTypes = types; all[dateStr] = entry;
-      try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
-      document.getElementById('golf-type-selector')?.querySelectorAll('.session-type-btn').forEach(b => {
-        const sel = types.includes(b.dataset.gtype);
-        b.style.background = sel ? 'rgba(52,199,89,0.12)' : '#F9F9F9';
-        b.style.fontWeight = sel ? '600' : '400';
-        b.style.color      = sel ? '#34C759' : '#000';
-      });
-    });
-  });
+  bindMultiSelect('golf-type-selector', 'gtype', dateStr, 'golfTypes', '#34C759', 'rgba(52,199,89,0.12)');
 
   // Smart session elements
-  document.getElementById('smart-duration')?.addEventListener('input', e => saveSessionField(dateStr, 'smartDuration', parseFloat(e.target.value) || null));
+  document.getElementById('smart-duration')?.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) saveSessionField(dateStr, 'smartDuration', v);
+  });
   document.getElementById('smart-notes-input')?.addEventListener('input', () => saveSessionField(dateStr, 'smartNotes', document.getElementById('smart-notes-input')?.value || ''));
 
   document.getElementById('smart-rating-selector')?.querySelectorAll('.session-rating-btn').forEach(btn => {
@@ -714,45 +709,77 @@ function openSessionModal(dateStr) {
     });
   });
 
-  // Gym exercise expand/collapse
-  document.getElementById('smart-gym-exercises')?.querySelectorAll('.gym-ex-header').forEach(header => {
-    header.addEventListener('click', () => {
-      const setPane = header.parentElement.querySelector('.gym-ex-sets');
-      const chevron = header.querySelector('.gym-ex-chevron');
-      const open    = setPane.style.display !== 'none';
-      setPane.style.display = open ? 'none' : 'block';
-      if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
+  // Gym exercise expand/collapse — works for both hypertrophy and smart-gym containers
+  ['hypertrophy-exercises', 'smart-gym-exercises'].forEach(containerId => {
+    document.getElementById(containerId)?.querySelectorAll('.gym-ex-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const setPane = header.parentElement.querySelector('.gym-ex-sets');
+        const chevron = header.querySelector('.gym-ex-chevron');
+        const open    = setPane.style.display !== 'none';
+        setPane.style.display = open ? 'none' : 'block';
+        if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
+      });
     });
   });
 
-  // Gym set data auto-save
-  function saveSmartGymSets() {
+  // Generic gym sets save — reads all rendered load/reps inputs for a given container
+  function saveGymSetsFromContainer(containerId, storeField, exerciseNames) {
+    const saved = {};
+    exerciseNames.forEach((name, exIdx) => {
+      const loadInputs = document.querySelectorAll(`#${containerId} .gym-set-load[data-ex="${exIdx}"]`);
+      const rows = [];
+      loadInputs.forEach((loadEl, s) => {
+        const repsEl = document.querySelector(`#${containerId} .gym-set-reps[data-ex="${exIdx}"][data-set="${s}"]`);
+        rows.push({ load: loadEl.value || '', reps: repsEl?.value || '' });
+      });
+      saved[name] = rows;
+    });
+    saveSessionField(dateStr, storeField, saved);
+  }
+
+  // Hypertrophy sets auto-save
+  if (session.type === 'hypertrophy') {
+    const exNames = session.exercises.map(e => e.name);
+    document.getElementById('hypertrophy-exercises')?.addEventListener('input', e => {
+      if (e.target.classList.contains('gym-set-reps') || e.target.classList.contains('gym-set-load')) {
+        saveGymSetsFromContainer('hypertrophy-exercises', 'gymSets', exNames);
+      }
+    });
+  }
+
+  // Smart-gym sets auto-save
+  if (session.type === 'smart-gym') {
     const prof    = Store.getProfile();
     const sess    = TrainingData.getSessionForDate(dateStr, prof.programmeStart, Store.getCheckIn(dateStr)?.rag || 'green', prof.programme, prof.programmeLengthWeeks);
-    const det     = sess.details || {};
-    if (!det.exercises) return;
-    const saved = {};
-    document.getElementById('smart-gym-exercises')?.querySelectorAll('.gym-ex-header').forEach((header, exIdx) => {
-      const exName  = det.exercises[exIdx]?.name;
-      if (!exName) return;
-      const numSets = parseInt(det.exercises[exIdx]?.sets) || 3;
-      const rows    = [];
-      for (let s = 0; s < numSets; s++) {
-        rows.push({
-          reps: document.querySelector(`.gym-set-reps[data-ex="${exIdx}"][data-set="${s}"]`)?.value || '',
-          load: document.querySelector(`.gym-set-load[data-ex="${exIdx}"][data-set="${s}"]`)?.value || '',
-        });
+    const exNames = (sess.details?.exercises || []).map(e => e.name);
+    document.getElementById('smart-gym-exercises')?.addEventListener('input', e => {
+      if (e.target.classList.contains('gym-set-reps') || e.target.classList.contains('gym-set-load')) {
+        saveGymSetsFromContainer('smart-gym-exercises', 'smartGymSets', exNames);
       }
-      saved[exName] = rows;
     });
-    saveSessionField(dateStr, 'smartGymSets', saved);
   }
-  document.getElementById('smart-gym-exercises')?.addEventListener('input', e => {
-    if (e.target.classList.contains('gym-set-reps') || e.target.classList.contains('gym-set-load')) saveSmartGymSets();
+
+  // Copy for Bevel button — works for both session types
+  document.getElementById('gym-copy-btn')?.addEventListener('click', () => {
+    const isHypertrophy = session.type === 'hypertrophy';
+    const exercises     = isHypertrophy ? session.exercises : (session.details?.exercises || []);
+    const savedSets     = isHypertrophy ? (Store.getCheckIn(dateStr)?.gymSets || {}) : (Store.getCheckIn(dateStr)?.smartGymSets || {});
+    const text          = formatGymSetsForClipboard(exercises, savedSets);
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('gym-copy-btn');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy for Bevel'; }, 2000); }
+    });
   });
 
-  document.getElementById('smart-cardio-distance')?.addEventListener('input', e => saveSessionField(dateStr, 'smartCardioDistance', parseFloat(e.target.value) || null));
-  document.getElementById('smart-cardio-speed')?.addEventListener('input',    e => saveSessionField(dateStr, 'smartCardioSpeed',    parseFloat(e.target.value) || null));
+  document.getElementById('smart-cardio-distance')?.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) saveSessionField(dateStr, 'smartCardioDistance', v);
+  });
+  document.getElementById('smart-cardio-speed')?.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) saveSessionField(dateStr, 'smartCardioSpeed', v);
+  });
 
   // Add / Edit buttons (smart programme only)
   document.getElementById('session-modal-add-btn')?.addEventListener('click', () => openAddWorkoutModal(dateStr, null));

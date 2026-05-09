@@ -187,7 +187,7 @@ const ProfilePage = (() => {
               <select class="settings-row-select" id="input-bjj-stripes">
                 <option value="">—</option>
                 ${[0,1,2,3,4].map(n => `
-                  <option value="${n}" ${profile.bjjStripes == n ? 'selected' : ''}>${n}</option>
+                  <option value="${n}" ${String(profile.bjjStripes) === String(n) ? 'selected' : ''}>${n}</option>
                 `).join('')}
               </select>
             </div>

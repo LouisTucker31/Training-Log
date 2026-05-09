@@ -64,7 +64,7 @@ const TrainingPage = (() => {
     const entry = all[dateStr] || { date: dateStr };
     entry.completed = !entry.completed;
     all[dateStr] = entry;
-    try { localStorage.setItem('tl_checkins', JSON.stringify(all)); } catch {}
+    Store.saveAllCheckIns(all);
     renderList();
     if (typeof HomePage !== 'undefined') HomePage.render();
     if (typeof InsightsPage !== 'undefined') InsightsPage.render();

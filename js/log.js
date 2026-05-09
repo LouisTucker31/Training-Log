@@ -17,8 +17,171 @@ const LogModal = (() => {
     jointPain:     0,
   };
 
-  const STEPS = ['sleep', 'recovery', 'rhr', 'motivation', 'energy', 'soreness', 'joint', 'summary'];
-  const TOTAL_STEPS = STEPS.length;
+  // 'welcome' is prepended when opening fresh (no prior check-in)
+  const CHECKIN_STEPS = ['sleep', 'recovery', 'rhr', 'motivation', 'energy', 'soreness', 'joint', 'summary'];
+  let STEPS      = CHECKIN_STEPS;
+  let TOTAL_STEPS = STEPS.length;
+
+  let _weatherCache = null; // { temp, condition, icon } or null
+
+  // ─── Weather ──────────────────────────────────────────────
+
+  const WMO_CODES = {
+    0: ['Clear sky', '☀️'], 1: ['Mainly clear', '🌤️'], 2: ['Partly cloudy', '⛅'], 3: ['Overcast', '☁️'],
+    45: ['Foggy', '🌫️'], 48: ['Freezing fog', '🌫️'],
+    51: ['Light drizzle', '🌦️'], 53: ['Drizzle', '🌦️'], 55: ['Heavy drizzle', '🌧️'],
+    61: ['Light rain', '🌦️'], 63: ['Rain', '🌧️'], 65: ['Heavy rain', '🌧️'],
+    71: ['Light snow', '🌨️'], 73: ['Snow', '❄️'], 75: ['Heavy snow', '❄️'],
+    77: ['Snow grains', '🌨️'],
+    80: ['Light showers', '🌦️'], 81: ['Showers', '🌧️'], 82: ['Heavy showers', '⛈️'],
+    85: ['Snow showers', '🌨️'], 86: ['Heavy snow showers', '❄️'],
+    95: ['Thunderstorm', '⛈️'], 96: ['Thunderstorm+hail', '⛈️'], 99: ['Thunderstorm+hail', '⛈️'],
+  };
+
+  async function fetchWeather() {
+    if (_weatherCache) return _weatherCache;
+    return new Promise(resolve => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(async pos => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto&forecast_days=1`;
+          const res  = await fetch(url);
+          const data = await res.json();
+          const temp = Math.round(data.current.temperature_2m);
+          const code = data.current.weathercode;
+          const [condition, icon] = WMO_CODES[code] || ['Unknown', '🌡️'];
+
+          // Build next 5 hourly slots from now
+          const nowHour = new Date().getHours();
+          const hourly  = [];
+          for (let i = 0; i < data.hourly.time.length && hourly.length < 5; i++) {
+            const h = new Date(data.hourly.time[i]).getHours();
+            if (h <= nowHour) continue;
+            const [, hIcon] = WMO_CODES[data.hourly.weathercode[i]] || ['', '🌡️'];
+            hourly.push({ hour: h, icon: hIcon, temp: Math.round(data.hourly.temperature_2m[i]) });
+          }
+
+          const high = Math.round(data.daily.temperature_2m_max[0]);
+          const low  = Math.round(data.daily.temperature_2m_min[0]);
+
+          _weatherCache = { temp, condition, icon, hourly, high, low };
+          resolve(_weatherCache);
+        } catch { resolve(null); }
+      }, () => resolve(null), { timeout: 5000 });
+    });
+  }
+
+  // ─── Welcome Step Builder ─────────────────────────────────
+
+  function buildStepWelcome(todaysSessions, weather) {
+    const profile  = Store.getProfile();
+    const h        = new Date().getHours();
+    const greeting = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    const name     = profile.name ? `, ${profile.name}` : '';
+
+    const now  = new Date();
+    const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const date = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    // Streak / programme context line
+    const allCI    = Store.getAllCheckIns();
+    const streak   = _getWelcomeStreak(allCI, profile.programmeStart);
+    const weekNum  = profile.programmeStart ? TrainingData.getWeekNumber(profile.programmeStart, profile.programmeLengthWeeks || 18) : null;
+    const contextParts = [];
+    if (weekNum) contextParts.push(`Week ${weekNum}`);
+    if (streak > 0) contextParts.push(`🔥 ${streak} day streak`);
+    const contextLine = contextParts.length
+      ? `<div class="welcome-context">${contextParts.join(' · ')}</div>`
+      : '';
+
+    // Weather block
+    let weatherHTML = `<div class="welcome-weather-placeholder" style="min-height:60px"></div>`;
+    if (weather) {
+      const hourlyHTML = weather.hourly && weather.hourly.length
+        ? `<div class="welcome-hourly">${weather.hourly.map(slot => `
+            <div class="welcome-hourly-slot">
+              <span class="welcome-hourly-time">${String(slot.hour).padStart(2,'0')}:00</span>
+              <span class="welcome-hourly-icon">${slot.icon}</span>
+              <span class="welcome-hourly-temp">${slot.temp}°</span>
+            </div>`).join('')}</div>`
+        : '';
+      weatherHTML = `
+        <div class="welcome-weather-block">
+          <div class="welcome-weather-main">
+            <span class="welcome-weather-icon">${weather.icon}</span>
+            <span class="welcome-weather-temp">${weather.temp}°C</span>
+            <span class="welcome-weather-condition">${weather.condition}</span>
+            <span class="welcome-weather-hilo">H:${weather.high}° L:${weather.low}°</span>
+          </div>
+          ${hourlyHTML}
+        </div>`;
+    }
+
+    const sessionTypeColour = {
+      hypertrophy:    '#007AFF', 'smart-gym':    '#007AFF',
+      bjj:            '#FF3B30', 'smart-sports': '#FF3B30',
+      cycle:          '#FF9500', 'smart-cardio': '#FF9500',
+      golf:           '#34C759', race:           '#FF9F0A',
+      rest:           '#8E8E93', none:           '#8E8E93', 'smart-other': '#8E8E93',
+    };
+
+    const sessionsHTML = todaysSessions.length
+      ? todaysSessions.map(s => {
+          const isRest = s.type === 'rest' || s.type === 'none';
+          if (isRest) return '';
+          const badge  = (s.tag || s.type).toUpperCase().slice(0, 7);
+          const title  = s.name || s.label || 'Session';
+          const sub    = s.subtitle || s.note || '';
+          const colour = sessionTypeColour[s.type] || '#8E8E93';
+          return `
+            <div class="welcome-session-row">
+              <span class="welcome-session-badge" style="color:${colour};background:${colour}18">${badge}</span>
+              <div class="welcome-session-info">
+                <div class="welcome-session-title">${title}</div>
+                ${sub ? `<div class="welcome-session-sub">${sub}</div>` : ''}
+              </div>
+            </div>`;
+        }).filter(Boolean).join('') || `<div class="welcome-session-rest">Rest & Recover</div>`
+      : `<div class="welcome-session-rest">Rest & Recover</div>`;
+
+    return `
+      <div class="modal-step welcome-step" data-step="welcome">
+        <div class="welcome-greeting">${greeting}${name}</div>
+        <div class="welcome-datetime">
+          <span class="welcome-time">${time}</span>
+          <span class="welcome-date">${date}</span>
+        </div>
+        ${contextLine}
+        ${weatherHTML}
+        <div class="welcome-section-label">Today's Training</div>
+        <div class="welcome-sessions">${sessionsHTML}</div>
+        <div class="welcome-inline-cta">
+          <button class="btn btn-primary" id="next-welcome">Start Check-in</button>
+        </div>
+        <div class="page-bottom-pad"></div>
+      </div>`;
+  }
+
+  function _getWelcomeStreak(allCheckIns, programmeStart) {
+    if (!programmeStart) return 0;
+    const start = new Date(programmeStart);
+    start.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Don't count today (no check-in yet) — streak is up to yesterday
+    let streak = 0;
+    let check  = new Date(today);
+    check.setDate(check.getDate() - 1);
+    while (check >= start) {
+      const key = check.toISOString().slice(0, 10);
+      const ci  = allCheckIns[key];
+      if (!ci || ci.score === undefined) break;
+      streak++;
+      check.setDate(check.getDate() - 1);
+    }
+    return streak;
+  }
 
   // ─── Scoring Logic ────────────────────────────────────────
 
@@ -110,14 +273,30 @@ const LogModal = (() => {
   function getEl(id) { return document.getElementById(id); }
 
   function updateProgress() {
-    const pct  = Math.round(((currentStep + 1) / TOTAL_STEPS) * 100);
-    const fill = document.querySelector('.modal-progress-fill');
-    const lbl  = document.querySelector('.modal-progress-label');
-    if (fill) fill.style.width = `${pct}%`;
-    if (lbl)  lbl.textContent  = `${currentStep + 1} of ${TOTAL_STEPS}`;
+    const hasWelcome  = STEPS[0] === 'welcome';
+    const progressBar = document.getElementById('modal-progress-bar');
+    const backBtn     = document.getElementById('modal-back-btn');
 
-    const backBtn = document.getElementById('modal-back-btn');
-    if (backBtn) backBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+    if (hasWelcome && currentStep === 0) {
+      // Welcome screen: hide progress bar, hide back button
+      if (progressBar) progressBar.style.display = 'none';
+      if (backBtn) backBtn.style.visibility = 'hidden';
+      return;
+    }
+
+    if (progressBar) progressBar.style.display = '';
+
+    // Step index within the check-in portion
+    const ciStep  = hasWelcome ? currentStep - 1 : currentStep;
+    const ciTotal = CHECKIN_STEPS.length;
+    const pct     = Math.round(((ciStep + 1) / ciTotal) * 100);
+    const fill    = document.querySelector('.modal-progress-fill');
+    const lbl     = document.querySelector('.modal-progress-label');
+    if (fill) fill.style.width = `${pct}%`;
+    if (lbl)  lbl.textContent  = `${ciStep + 1} of ${ciTotal}`;
+
+    const firstCheckinStep = hasWelcome ? 1 : 0;
+    if (backBtn) backBtn.style.visibility = currentStep <= firstCheckinStep ? 'hidden' : 'visible';
   }
 
   function showStep(index, direction = 1) {
@@ -140,12 +319,16 @@ const LogModal = (() => {
 
   // ─── Build Modal HTML ─────────────────────────────────────
 
-  function buildModal() {
+  function buildModal(welcomeHTML) {
     const backdrop = document.createElement('div');
     backdrop.id    = 'log-modal-backdrop';
     backdrop.addEventListener('click', e => {
       if (e.target === backdrop) close();
     });
+
+    // When the welcome step is included, progress bar only counts check-in steps
+    const progressStepCount = CHECKIN_STEPS.length;
+
     backdrop.innerHTML = `
       <div id="log-modal">
         <div class="modal-handle"></div>
@@ -154,13 +337,14 @@ const LogModal = (() => {
           <span class="modal-header-title">Daily Readiness</span>
           <button class="modal-close-btn" id="log-modal-close">✕</button>
         </div>
-        <div class="modal-progress">
+        <div class="modal-progress" id="modal-progress-bar" ${welcomeHTML ? 'style="display:none"' : ''}>
           <div class="modal-progress-track">
             <div class="modal-progress-fill" style="width:0%"></div>
           </div>
-          <div class="modal-progress-label">1 of ${TOTAL_STEPS}</div>
+          <div class="modal-progress-label">1 of ${progressStepCount}</div>
         </div>
         <div class="modal-steps">
+          ${welcomeHTML || ''}
           ${buildStepSleep()}
           ${buildStepRecovery()}
           ${buildStepRHR()}
@@ -173,7 +357,7 @@ const LogModal = (() => {
       </div>
     `;
     document.getElementById('app').appendChild(backdrop);
-    bindEvents();
+    bindEvents(!!welcomeHTML);
   }
 
   function buildStepSleep() {
@@ -563,48 +747,28 @@ const LogModal = (() => {
 
   // ─── Event Binding ────────────────────────────────────────
 
-  function bindEvents() {
+  function bindEvents(hasWelcome) {
     // Close
     document.getElementById('log-modal-close')?.addEventListener('click', close);
 
-    // Back
+    // Back — can't go back past the first check-in step (skip welcome on back)
     document.getElementById('modal-back-btn')?.addEventListener('click', () => {
-      if (currentStep > 0) showStep(currentStep - 1, -1);
+      const firstCheckinStep = hasWelcome ? 1 : 0;
+      if (currentStep > firstCheckinStep) showStep(currentStep - 1, -1);
     });
 
-    // Drag to dismiss
-    const modal  = document.getElementById('log-modal');
-    const handle = modal?.querySelector('.modal-handle');
-    if (modal && handle) {
-      let startY = 0, lastY = 0, dragging = false;
+    // Welcome continue
+    document.getElementById('next-welcome')?.addEventListener('click', () => advance());
 
-      handle.addEventListener('touchstart', e => {
-        startY   = e.touches[0].clientY;
-        lastY    = startY;
-        dragging = true;
-        modal.style.transition = 'none';
-        e.preventDefault();
-      }, { passive: false });
-
-      handle.addEventListener('touchmove', e => {
-        if (!dragging) return;
-        lastY = e.touches[0].clientY;
-        const delta = Math.max(0, lastY - startY);
-        modal.style.transform = `translateY(${delta}px)`;
-        e.preventDefault();
-      }, { passive: false });
-
-      handle.addEventListener('touchend', () => {
-        if (!dragging) return;
-        dragging = false;
-        const delta = Math.max(0, lastY - startY);
-        modal.style.transition = '';
-        if (delta > 120) {
-          close();
-        } else {
-          modal.style.transform = 'translateY(0)';
-        }
-      });
+    // Drag to dismiss — scroll body is the currently visible step
+    const modal = document.getElementById('log-modal');
+    if (modal) {
+      const scrollProxy = { get scrollTop() {
+        return modal.querySelector('.modal-step.active')?.scrollTop
+            ?? modal.querySelector('.modal-step')?.scrollTop
+            ?? 0;
+      }};
+      attachModalDrag(modal, scrollProxy, close);
     }
 
     // Sleep next
@@ -708,18 +872,23 @@ const LogModal = (() => {
       jointPain:     existing?.jointPain     ?? 0,
     };
 
+    // Edit mode: no welcome step
+    STEPS       = CHECKIN_STEPS;
+    TOTAL_STEPS = STEPS.length;
+
     let backdrop = document.getElementById('log-modal-backdrop');
     if (backdrop) backdrop.remove();
-    buildModal();
+    buildModal(null);
 
     requestAnimationFrame(() => {
       document.getElementById('log-modal-backdrop')?.classList.add('open');
       showStep(0);
       updateProgress();
     });
+    lockBodyScroll();
   }
 
-  function open() {
+  async function open() {
     const existing = Store.getTodayCheckIn();
     if (existing) {
       openWithResult(existing);
@@ -733,15 +902,57 @@ const LogModal = (() => {
       soreness: null, jointPain: 0,
     };
 
+    // Build welcome step: fetch weather and today's sessions
+    const profile       = Store.getProfile();
+    const todayStr      = Store.todayKey();
+    const todaySession  = TrainingData.getSessionForDate(todayStr, profile.programmeStart, 'green', profile.programme, profile.programmeLengthWeeks);
+    const todaySessions = todaySession ? [todaySession] : [];
+
+    // Start fetching weather in the background (don't block modal open)
+    STEPS      = ['welcome', ...CHECKIN_STEPS];
+    TOTAL_STEPS = STEPS.length;
+
     let backdrop = document.getElementById('log-modal-backdrop');
     if (backdrop) backdrop.remove();
-    buildModal();
+
+    // Fetch weather async — build modal with placeholder, then patch in once ready
+    let weather = _weatherCache;
+    if (!weather) {
+      fetchWeather().then(w => {
+        _weatherCache = w;
+        const el = document.querySelector('.welcome-weather-placeholder');
+        if (el && w) {
+          const hourlyHTML = w.hourly && w.hourly.length
+            ? `<div class="welcome-hourly">${w.hourly.map(slot => `
+                <div class="welcome-hourly-slot">
+                  <span class="welcome-hourly-time">${String(slot.hour).padStart(2,'0')}:00</span>
+                  <span class="welcome-hourly-icon">${slot.icon}</span>
+                  <span class="welcome-hourly-temp">${slot.temp}°</span>
+                </div>`).join('')}</div>`
+            : '';
+          el.outerHTML = `
+            <div class="welcome-weather-block">
+              <div class="welcome-weather-main">
+                <span class="welcome-weather-icon">${w.icon}</span>
+                <span class="welcome-weather-temp">${w.temp}°C</span>
+                <span class="welcome-weather-condition">${w.condition}</span>
+                <span class="welcome-weather-hilo">H:${w.high}° L:${w.low}°</span>
+              </div>
+              ${hourlyHTML}
+            </div>`;
+        }
+      });
+    }
+
+    const welcomeHTML = buildStepWelcome(todaySessions, weather);
+    buildModal(welcomeHTML);
 
     requestAnimationFrame(() => {
       document.getElementById('log-modal-backdrop')?.classList.add('open');
       showStep(0);
       updateProgress();
     });
+    lockBodyScroll();
   }
 
   function openWithResult(checkin) {
@@ -761,6 +972,7 @@ const LogModal = (() => {
       backdropEl.classList.add('open');
       showResultWithEdit(checkin);
     });
+    lockBodyScroll();
   }
 
   function close() {
@@ -771,6 +983,7 @@ const LogModal = (() => {
       backdrop.classList.remove('open');
       setTimeout(() => backdrop.remove(), 400);
     }
+    unlockBodyScroll();
     NavBar.setActiveByTarget(Router.getCurrentPage());
   }
 
@@ -779,6 +992,24 @@ const LogModal = (() => {
   function init() {
     checkMidnightReset();
     renderLogPage();
+    maybeAutoOpen();
+  }
+
+  function maybeAutoOpen() {
+    // Auto-open the morning modal once per day if no check-in yet
+    const todayStr  = Store.todayKey();
+    const seenKey   = `tl_morning_seen_${todayStr}`;
+    const alreadySeen = localStorage.getItem(seenKey);
+    if (alreadySeen) return;
+
+    const existing = Store.getTodayCheckIn();
+    if (existing) return;
+
+    // Mark as shown for today so reloads don't re-trigger
+    localStorage.setItem(seenKey, '1');
+
+    // Small delay so the UI has settled before the modal slides up
+    setTimeout(() => open(), 600);
   }
 
   function checkMidnightReset() {
@@ -788,7 +1019,8 @@ const LogModal = (() => {
   function scheduleMidnightReset() {
     const now      = new Date();
     const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
+    midnight.setDate(midnight.getDate() + 1);
+    midnight.setHours(0, 0, 0, 0);
     const msUntil  = midnight - now;
 
     setTimeout(() => {

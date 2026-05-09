@@ -80,6 +80,10 @@ const Store = (() => {
     return write(KEYS.CHECK_INS, all);
   }
 
+  function saveAllCheckIns(all) {
+    return write(KEYS.CHECK_INS, all);
+  }
+
   function deleteCheckIn(dateKey) {
     const all = getAllCheckIns();
     delete all[dateKey];
@@ -196,6 +200,7 @@ const Store = (() => {
     getProfile,
     saveProfile,
     getAllCheckIns,
+    saveAllCheckIns,
     getCheckIn,
     getTodayCheckIn,
     saveCheckIn,

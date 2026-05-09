@@ -45,3 +45,112 @@ function showAlert({ title, message, confirmLabel = 'OK', confirmDestructive = f
 
   // Tap outside does nothing — iOS alerts block interaction
 }
+
+// iOS-style action sheet for multi-option choices
+// actions: [{ label, handler, destructive }]
+function showActionSheet({ title, message, actions }) {
+  const existing = document.getElementById('ios-action-sheet-overlay');
+  if (existing) existing.remove();
+
+  const actionsHTML = actions.map((a, i) => `
+    <button class="ios-action-btn${a.destructive ? ' destructive' : ''}" data-idx="${i}">
+      ${a.label}
+    </button>`).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id    = 'ios-action-sheet-overlay';
+  overlay.innerHTML = `
+    <div id="ios-action-sheet">
+      ${(title || message) ? `
+      <div class="ios-action-header">
+        ${title   ? `<div class="ios-action-title">${title}</div>`     : ''}
+        ${message ? `<div class="ios-action-message">${message}</div>` : ''}
+      </div>` : ''}
+      ${actionsHTML}
+      <button class="ios-action-btn ios-action-cancel">Cancel</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  function dismiss() {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+  }
+
+  overlay.querySelector('.ios-action-cancel').addEventListener('click', dismiss);
+  overlay.querySelectorAll('.ios-action-btn[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      dismiss();
+      if (actions[idx]?.handler) actions[idx].handler();
+    });
+  });
+
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) dismiss();
+  });
+}
+
+// ─── Body scroll lock ─────────────────────────────────────────
+// Prevents the page behind a modal from scrolling while the modal is open.
+// Uses a count so nested modals don't prematurely unlock.
+let _scrollLockCount = 0;
+function lockBodyScroll() {
+  if (_scrollLockCount++ === 0) document.body.style.overflow = 'hidden';
+}
+function unlockBodyScroll() {
+  if (--_scrollLockCount <= 0) { _scrollLockCount = 0; document.body.style.overflow = ''; }
+}
+
+// ─── attachModalDrag ──────────────────────────────────────────
+// Attaches drag-to-dismiss to a full modal sheet element.
+// Works from anywhere on the modal when the scroll body is at the top,
+// matching native iOS sheet behaviour.
+// modal:      the sheet element that receives translateY
+// scrollBody: a DOM element or {scrollTop} proxy; pass null if no inner scroll
+// onDismiss:  called when the downward drag exceeds the threshold
+function attachModalDrag(modal, scrollBody, onDismiss) {
+  let startY = 0, lastY = 0, dragging = false, cancelled = false;
+
+  modal.addEventListener('touchstart', e => {
+    startY    = e.touches[0].clientY;
+    lastY     = startY;
+    dragging  = false;
+    cancelled = false;
+  }, { passive: true });
+
+  modal.addEventListener('touchmove', e => {
+    if (cancelled) return;
+    lastY = e.touches[0].clientY;
+    const dy  = lastY - startY;
+    const atTop = !scrollBody || scrollBody.scrollTop <= 0;
+
+    if (!dragging) {
+      if (dy > 6 && atTop) {
+        dragging = true;
+        modal.style.transition = 'none';
+      } else if (dy < -2 || !atTop) {
+        cancelled = true;
+        return;
+      } else {
+        return;
+      }
+    }
+
+    e.preventDefault();
+    modal.style.transform = `translateY(${Math.max(0, dy)}px)`;
+  }, { passive: false });
+
+  modal.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    modal.style.transition = '';
+    if (lastY - startY > 120) {
+      onDismiss();
+    } else {
+      modal.style.transform = 'translateY(0)';
+    }
+  });
+}

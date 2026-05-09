@@ -64,12 +64,12 @@
   align-items: flex-start;   /* track at top; safe area space below */
   justify-content: center;
 
-  /* Height = bar + iPhone home indicator clearance + extra lift */
-  height: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + 12px);
+  /* Height = bar + iPhone home indicator clearance */
+  height: calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px));
 
-  /* Push bar up from home indicator */
+  /* Sit flush against the home indicator — safe area handles the gap */
   padding-top: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Side insets for notch/rounded corners + breathing room */
   padding-left:  calc(env(safe-area-inset-left,  0px) + 24px);

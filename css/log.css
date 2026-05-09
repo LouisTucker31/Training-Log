@@ -6,7 +6,7 @@
 #log-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 400;
   pointer-events: none;
 }
 
@@ -54,7 +54,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-md) var(--space-md) 0;
+  padding: var(--space-md) var(--space-md) var(--space-md);
   flex-shrink: 0;
 }
 
@@ -85,7 +85,7 @@
 
 /* ─── Progress Bar ───────────────────────────────────────── */
 .modal-progress {
-  padding: var(--space-md) var(--space-md) 0;
+  padding: var(--space-md) var(--space-md) var(--space-md);
   flex-shrink: 0;
 }
 
@@ -396,43 +396,6 @@
   margin: var(--space-sm) auto var(--space-sm);
 }
 
-.result-score-circle {
-  width: 90px;
-  height: 90px;
-  border-radius: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-sm);
-}
-
-.result-score-circle.green { background: var(--rag-green-bg); }
-.result-score-circle.amber { background: var(--rag-amber-bg); }
-.result-score-circle.red   { background: var(--rag-red-bg);   }
-
-.result-score-number {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.result-score-circle.green .result-score-number { color: var(--rag-green); }
-.result-score-circle.amber .result-score-number { color: var(--rag-amber); }
-.result-score-circle.red   .result-score-number { color: var(--rag-red);   }
-
-.result-score-label {
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 2px;
-}
-
-.result-score-circle.green .result-score-label { color: var(--rag-green); }
-.result-score-circle.amber .result-score-label { color: var(--rag-amber); }
-.result-score-circle.red   .result-score-label { color: var(--rag-red);   }
 
 .result-volume-label {
   font-size: var(--text-title3);
@@ -512,6 +475,207 @@
   color: var(--label-tertiary);
 }
 
+/* ─── Morning Welcome Step ───────────────────────────────── */
+
+.welcome-step {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-inline-cta {
+  margin-top: var(--space-lg);
+}
+
+/* Greeting — smaller, secondary, sits above the time */
+.welcome-greeting {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--label-secondary);
+  margin-bottom: 4px;
+}
+
+/* Time is the dominant hero */
+.welcome-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.welcome-time {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 60px;
+  font-weight: 700;
+  color: var(--label-primary);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.welcome-date {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  color: var(--label-secondary);
+}
+
+/* Context line: Week X · 🔥 streak */
+.welcome-context {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  color: var(--label-tertiary);
+  margin-bottom: 16px;
+}
+
+/* Weather block */
+.welcome-weather-block {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.welcome-weather-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.welcome-weather-icon {
+  font-size: 22px;
+}
+
+.welcome-weather-temp {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--label-primary);
+  letter-spacing: -0.5px;
+}
+
+.welcome-weather-condition {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  color: var(--label-secondary);
+  flex: 1;
+}
+
+.welcome-weather-hilo {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  color: var(--label-tertiary);
+  white-space: nowrap;
+}
+
+/* Hourly forecast strip */
+.welcome-hourly {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-top: 0.5px solid var(--separator-opaque);
+  padding-top: 10px;
+  margin: 0 -2px;
+}
+
+.welcome-hourly::-webkit-scrollbar { display: none; }
+
+.welcome-hourly-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+.welcome-hourly-time {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  color: var(--label-tertiary);
+}
+
+.welcome-hourly-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.welcome-hourly-temp {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.welcome-section-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+  margin-bottom: 10px;
+}
+
+.welcome-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.welcome-session-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+}
+
+.welcome-session-badge {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  width: 52px;
+  flex-shrink: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-session-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.welcome-session-sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  color: var(--label-tertiary);
+}
+
+.welcome-session-rest {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 15px;
+  color: var(--label-tertiary);
+  padding: 12px 0;
+}
+
 /* ─── Log Page (today's result, when not in modal) ───────── */
 #page-log .log-empty-state {
   display: flex;
@@ -544,7 +708,7 @@
 #session-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 400;
   pointer-events: none;
 }
 #session-modal-backdrop.open {

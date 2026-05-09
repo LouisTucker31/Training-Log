@@ -364,6 +364,92 @@ html, body {
   font-weight: 400;
 }
 
+/* ─── iOS Action Sheet ───────────────────────────────────── */
+
+#ios-action-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  padding: 0 8px calc(env(safe-area-inset-bottom, 0px) + 8px);
+}
+
+#ios-action-sheet-overlay.visible {
+  opacity: 1;
+}
+
+#ios-action-sheet {
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateY(40px);
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#ios-action-sheet-overlay.visible #ios-action-sheet {
+  transform: translateY(0);
+}
+
+.ios-action-header {
+  background: rgba(242,242,247,0.98);
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.ios-action-title {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: #8E8E93;
+  margin-bottom: 2px;
+}
+
+.ios-action-message {
+  font-family: var(--font);
+  font-size: 13px;
+  color: #8E8E93;
+  line-height: 1.4;
+}
+
+.ios-action-btn {
+  width: 100%;
+  min-height: 57px;
+  background: rgba(242,242,247,0.98);
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font);
+  font-size: 20px;
+  color: #007AFF;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background 100ms ease;
+}
+
+.ios-action-btn:active {
+  background: rgba(210,210,215,0.98);
+}
+
+.ios-action-btn.destructive {
+  color: #FF3B30;
+}
+
+.ios-action-cancel {
+  font-weight: 600;
+}
+
 /* ─── Empty / No-Programme State ────────────────────────── */
 .empty-state {
   display: flex;

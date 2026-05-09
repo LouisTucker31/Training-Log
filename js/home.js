@@ -278,12 +278,6 @@ const HomePage = (() => {
 
   // ─── Stat Tiles ───────────────────────────────────────────
 
-  function parseSetsUpper(str) {
-    if (!str) return 0;
-    const parts = str.split('-');
-    return parseInt(parts[parts.length - 1]) || 0;
-  }
-
   function getWeekStats(allCheckIns, programmeStart, programme, programmeLengthWeeks) {
     const dates = getCalendarWeekDates();
     let gymDone = 0, gymTotal = 0;

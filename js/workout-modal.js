@@ -18,7 +18,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
   const backdrop = document.createElement('div');
   backdrop.id    = 'add-workout-backdrop';
   backdrop.style.cssText = `
-    position:absolute;inset:0;z-index:1500;
+    position:fixed;inset:0;z-index:400;
     pointer-events:none;
   `;
 
@@ -52,28 +52,13 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
     backdrop.style.pointerEvents = 'auto';
     sheet.style.transform = 'translateY(0)';
   });
+  lockBodyScroll();
 
-  let dragStartY = 0, dragLastY = 0, dragging = false;
-  handle.addEventListener('touchstart', e => {
-    dragStartY = dragLastY = e.touches[0].clientY;
-    dragging   = true;
-    sheet.style.transition = 'none';
-    e.preventDefault();
-  }, { passive: false });
-  handle.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    dragLastY = e.touches[0].clientY;
-    const delta = Math.max(0, dragLastY - dragStartY);
-    sheet.style.transform = `translateY(${delta}px)`;
-    e.preventDefault();
-  }, { passive: false });
-  handle.addEventListener('touchend', () => {
-    if (!dragging) return;
-    dragging = false;
-    sheet.style.transition = '';
-    if (Math.max(0, dragLastY - dragStartY) > 120) closeAddWorkout();
-    else sheet.style.transform = 'translateY(0)';
-  });
+  // Drag-to-dismiss: works from anywhere when scroll body is at top
+  // scrollBody is the active page element — resolved lazily since pages swap
+  attachModalDrag(sheet, { get scrollTop() {
+    return viewport.querySelector('.add-workout-page')?.scrollTop ?? 0;
+  }}, closeAddWorkout);
 
   function renderPage(page, dir) {
     const old  = viewport.querySelector('.add-workout-page');
@@ -225,7 +210,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
               </button>
             </div>` : ''}
         </div>
-        <div style="padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px);">
+        <div style="padding:16px 16px calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg) + 12px);">
           <button id="add-wkt-continue" style="width:100%;min-height:52px;background:var(--colour-blue);border:none;border-radius:12px;
             font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:600;color:#fff;cursor:pointer;">
             Continue
@@ -309,7 +294,7 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
             >${(existingWorkout && existingWorkout.details && existingWorkout.details.notes) || ''}</textarea>
           </div>
         </div>
-        <div style="padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px);">
+        <div style="padding:16px 16px calc(var(--nav-inner-height) + env(safe-area-inset-bottom, 0px) + var(--space-lg) + 12px);">
           <button id="add-wkt-save" style="width:100%;min-height:52px;background:var(--colour-blue);border:none;border-radius:12px;
             font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:600;color:#fff;cursor:pointer;">
             Save Workout
@@ -443,12 +428,19 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
       return;
     }
 
-    const choice = window.confirm('Edit this occurrence only?\n\nOK = this date only\nCancel = this and all future occurrences');
-    commitSave(p2, det, choice ? 'this' : 'forward');
+    showActionSheet({
+      title:   'Edit Recurring Workout',
+      message: 'Which occurrences do you want to update?',
+      actions: [
+        { label: 'This Date Only',       handler: () => commitSave(p2, det, 'this') },
+        { label: 'This & Future Dates',  handler: () => commitSave(p2, det, 'forward') },
+      ],
+    });
   }
 
   function closeAddWorkout() {
     sheet.style.transform = 'translateY(100%)';
+    unlockBodyScroll();
     setTimeout(() => { backdrop.remove(); TrainingPage.renderList(); }, 400);
   }
 
@@ -485,18 +477,23 @@ function openAddWorkoutModal(dateStr, existingWorkout) {
       });
 
       pageEl.querySelector('#add-wkt-delete')?.addEventListener('click', () => {
-        const choice = window.confirm(
-          'Delete this workout?\n\nOK = delete all occurrences\nCancel to keep'
-        );
-        if (!choice) return;
-        const mode = window.confirm('Delete only from this date forward?\n\nOK = forward only\nCancel = all occurrences')
-          ? 'forward' : 'all';
-        Store.deleteSmartWorkoutOnDate(existingWorkout.id, dateStr, mode);
-        TrainingPage.renderList();
-        if (typeof HomePage !== 'undefined') HomePage.render();
-        if (typeof InsightsPage !== 'undefined') InsightsPage.render();
-        closeAddWorkout();
-        setTimeout(() => openSessionModal(dateStr), 50);
+        function doDelete(mode) {
+          Store.deleteSmartWorkoutOnDate(existingWorkout.id, dateStr, mode);
+          TrainingPage.renderList();
+          if (typeof HomePage !== 'undefined') HomePage.render();
+          if (typeof InsightsPage !== 'undefined') InsightsPage.render();
+          closeAddWorkout();
+          setTimeout(() => openSessionModal(dateStr), 50);
+        }
+        showActionSheet({
+          title:   'Delete Workout',
+          message: 'Which occurrences do you want to remove?',
+          actions: [
+            { label: 'This Date Only',      handler: () => doDelete('this'),    destructive: true },
+            { label: 'This & Future Dates', handler: () => doDelete('forward'), destructive: true },
+            { label: 'All Occurrences',     handler: () => doDelete('all'),     destructive: true },
+          ],
+        });
       });
     }
 
